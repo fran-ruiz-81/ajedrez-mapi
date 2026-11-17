@@ -1,5 +1,6 @@
-// El mapache guía. Cambia MASCOT_NAME por el nombre de su peluche.
-export const MASCOT_NAME = 'Mapi';
+// El mapache guía (como su peluche) y el nombre del jugador.
+export const MASCOT_NAME = 'Nino';
+export const PLAYER_NAME = 'LRM';
 
 export type Mood = 'happy' | 'think' | 'wow' | 'sad';
 

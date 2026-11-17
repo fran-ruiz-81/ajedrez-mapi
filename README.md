@@ -1,6 +1,6 @@
-# ♞ Ajedrez con Mapi
+# ♞ El ajedrez de LRM
 
-Juego de ajedrez para aprender, pensado para niños de unos 7 años. Mapi, un mapache, acompaña al jugador, le da pistas explicadas y le avisa de los peligros.
+Juego de ajedrez para aprender, pensado para niños de unos 7 años. Nino, un mapache, acompaña al jugador, le da pistas explicadas y le avisa de los peligros.
 
 ## Qué incluye (fase 1)
 
@@ -19,7 +19,7 @@ npm run dev      # http://localhost:5173 (también accesible desde el móvil en 
 npm run build    # genera dist/
 ```
 
-- Cambiar el nombre del mapache: `MASCOT_NAME` en `src/mascot.ts`.
+- Cambiar el nombre del mapache o del jugador: `MASCOT_NAME` y `PLAYER_NAME` en `src/mascot.ts`.
 - Añadir un tema: una entrada en `src/themes.ts`.
 - Ajustar rivales: `src/rivals.ts`.
 

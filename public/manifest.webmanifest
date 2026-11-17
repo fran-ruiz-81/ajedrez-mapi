@@ -1,7 +1,7 @@
 {
-  "name": "Ajedrez con Mapi",
-  "short_name": "Ajedrez Mapi",
-  "description": "Aprende ajedrez jugando con Mapi, tu amigo mapache.",
+  "name": "El ajedrez de LRM",
+  "short_name": "Ajedrez LRM",
+  "description": "Aprende ajedrez jugando con Nino, tu amigo mapache.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

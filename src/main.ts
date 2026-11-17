@@ -4,7 +4,7 @@ import { pieceSvg, PIECE_NAMES } from './pieces';
 import { THEMES, getTheme, type Theme } from './themes';
 import { load, save, type Progress } from './storage';
 import { sfx, setSoundEnabled } from './sound';
-import { mascotSvg, MASCOT_NAME, type Mood } from './mascot';
+import { mascotSvg, MASCOT_NAME, PLAYER_NAME, type Mood } from './mascot';
 import { RIVALS, type Rival } from './rivals';
 import { bestMove, preloadStockfish } from './stockfish';
 import { describeOpponentMove, explainMove, piecesInDanger, warnAfterMove } from './teach';
@@ -80,8 +80,8 @@ function showHome() {
       <div class="home-hero">
         <div class="mascot big bounce">${mascotSvg('happy')}</div>
         <div>
-          <h1>Ajedrez con ${MASCOT_NAME}</h1>
-          <p class="sub">¡Aprende y juega con tu amigo mapache!</p>
+          <h1>El ajedrez de ${PLAYER_NAME}</h1>
+          <p class="sub">¡Hola, ${PLAYER_NAME}! Soy ${MASCOT_NAME}, tu amigo mapache. ¿Jugamos?</p>
           <p class="stars-total">⭐ ${total} estrellas</p>
         </div>
       </div>
@@ -317,7 +317,7 @@ function startGame(opts: GameOpts) {
         stars = Math.max(1, 3 - (usedHint ? 1 : 0) - (usedUndo ? 1 : 0));
         progress.stars[rival!.id] = Math.max(progress.stars[rival!.id] ?? 0, stars);
         persist();
-        title = '¡Has ganado! 🏆';
+        title = `¡Has ganado, ${PLAYER_NAME}! 🏆`;
         text = `¡Jaque mate a ${rival!.name}! ${
           stars < 3 ? 'Gana sin pistas ni deshacer para conseguir 3 estrellas.' : '¡Partida perfecta!'
         }`;
@@ -523,8 +523,8 @@ function startGame(opts: GameOpts) {
   if (isCpu) {
     say(
       playerColor === 'w'
-        ? `¡Hola! Soy ${MASCOT_NAME}. Juegas con las blancas contra ${rival!.name}. ¡Empiezas tú!`
-        : `¡Hola! Soy ${MASCOT_NAME}. Hoy juegas con las negras: empieza ${rival!.name}.`,
+        ? `¡Hola, ${PLAYER_NAME}! Soy ${MASCOT_NAME}. Juegas con las blancas contra ${rival!.name}. ¡Empiezas tú!`
+        : `¡Hola, ${PLAYER_NAME}! Soy ${MASCOT_NAME}. Hoy juegas con las negras: empieza ${rival!.name}.`,
     );
   } else {
     say(`¡Hola! Soy ${MASCOT_NAME}. Empiezan las blancas. ¡Que gane el mejor!`);
