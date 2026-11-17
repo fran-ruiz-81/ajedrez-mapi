@@ -4,6 +4,7 @@ export interface Progress {
   sound: boolean;
   helps: boolean;
   stars: Record<string, number>; // estrellas por rival
+  lessons: Record<string, number>; // estrellas por lección (0-3)
 }
 
 const KEY = 'ajedrez-mapache-v1';
@@ -13,16 +14,22 @@ const DEFAULTS: Progress = {
   sound: true,
   helps: true,
   stars: {},
+  lessons: {},
 };
 
 export function load(): Progress {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+    if (raw) {
+      const p = { ...DEFAULTS, ...JSON.parse(raw) };
+      p.stars ??= {};
+      p.lessons ??= {};
+      return p;
+    }
   } catch {
     /* navegador sin almacenamiento: seguimos con valores por defecto */
   }
-  return { ...DEFAULTS, stars: {} };
+  return { ...DEFAULTS, stars: {}, lessons: {} };
 }
 
 export function save(p: Progress): void {

@@ -10,6 +10,7 @@ import { bestMove, preloadStockfish } from './stockfish';
 import { describeOpponentMove, explainMove, piecesInDanger, warnAfterMove } from './teach';
 import type { ScoredMove } from './engine';
 import qrcode from 'qrcode-generator';
+import { showLessons } from './lessons';
 
 const app = document.getElementById('app')!;
 const progress: Progress = load();
@@ -75,7 +76,7 @@ function isUnlocked(i: number) {
 }
 
 function showHome() {
-  const total = Object.values(progress.stars).reduce((a, b) => a + b, 0);
+  const total = [...Object.values(progress.stars), ...Object.values(progress.lessons)].reduce((a, b) => a + b, 0);
   app.innerHTML = `
     <main class="screen home">
       <div class="home-hero">
@@ -89,7 +90,7 @@ function showHome() {
       <div class="menu">
         <button class="btn big primary" data-go="rivals">🤖 Jugar contra el ordenador</button>
         <button class="btn big" data-go="local">👥 Jugar dos personas</button>
-        <button class="btn big soon" disabled>📚 Lecciones <small>¡pronto!</small></button>
+        <button class="btn big" data-go="lessons">📚 Lecciones</button>
         <button class="btn big soon" disabled>🧩 Retos <small>¡pronto!</small></button>
         <button class="btn big soon" disabled>🚀 Aperturas <small>¡pronto!</small></button>
       </div>
@@ -110,6 +111,9 @@ function showHome() {
       </section>
     </main>`;
   app.querySelector('[data-go="rivals"]')!.addEventListener('click', showRivals);
+  app.querySelector('[data-go="lessons"]')!.addEventListener('click', () =>
+    showLessons({ app, progress, persist, theme, goHome: showHome }),
+  );
   app.querySelector('[data-go="local"]')!.addEventListener('click', () => startGame({ mode: 'local' }));
   app.querySelectorAll<HTMLElement>('[data-theme]').forEach((b) =>
     b.addEventListener('click', () => {
