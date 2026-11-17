@@ -17,6 +17,7 @@ _Última actualización: 17/11/2026_
 | Todo en español | ✅ | |
 | Un solo jugador (sin perfiles) | ✅ | |
 | Personalizado: el título es "El ajedrez de LRM" y le saluda por su nombre | ✅ | `PLAYER_NAME` en `src/mascot.ts` |
+| Curso escolar configurable (1º–6º de primaria; por defecto 2º) que ajusta el nivel | ✅ | En los ajustes de inicio. Lógica en `src/level.ts` |
 
 ## 2. Plataforma y despliegue
 
@@ -38,7 +39,7 @@ _Última actualización: 17/11/2026_
 |---|---|---|
 | Contra el ordenador | ✅ | |
 | Dos personas en el mismo dispositivo | ✅ | |
-| Lecciones guiadas (pieza a pieza, minijuegos) | ⬜ | Fase 2. Botón "¡pronto!" en el menú |
+| Lecciones guiadas (pieza a pieza, minijuegos) | ✅ | 10 lecciones; ver sección 6 bis |
 | Retos / puzzles (mate en 1, pieza sin defender…) | ⬜ | Fase 3 |
 | Aperturas | ⬜ | Fase 4, ver sección 6 |
 
@@ -51,6 +52,8 @@ _Última actualización: 17/11/2026_
 | Elegir color: blancas, negras o sorpresa | ✅ | |
 | El ordenador "piensa" sin congelar la pantalla | ✅ | Web Workers |
 | Si Stockfish no carga, se usa el motor propio | ✅ | |
+| La fuerza de los rivales sube con el curso | ✅ | Desde 3º se despistan menos; en 5º–6º, más fuertes |
+| La jugada del ordenador se ve bien | ✅ | La pieza se desliza despacio (0,9 s), flecha naranja, la pieza comida se desvanece y botón "Ver otra vez su jugada" |
 
 ## 5. Ayudas para aprender
 
@@ -67,6 +70,21 @@ _Última actualización: 17/11/2026_
 | Coordenadas en el tablero (a–h, 1–8) | ✅ | |
 | Piezas comidas por cada bando | ✅ | |
 | Explicación de tablas (rey ahogado, material insuficiente) | ✅ | |
+| Notación de la extraescolar (Cf3, AxE5…) en los mensajes | ✅ | A partir de 3º |
+| Ayudas por defecto según el curso | ✅ | Encendidas hasta 4º; apagadas en 5º–6º (se pueden encender) |
+
+## 6 bis. Lecciones (Fase 2)
+
+| Requisito | Estado | Notas |
+|---|---|---|
+| Lecciones: torre, alfil, dama, rey, caballo, peón, comer piezas (valores), jaque, jaque mate, enroque | ✅ | `src/lessons/data.ts` |
+| Introducción de Nino con demostración de cómo mueve la pieza | ✅ | |
+| Ejercicios "recoge las estrellas", con piezas rivales y casillas atacadas | ✅ | 3–5 por lección |
+| Ejercicios de jaque, mate en 1, enroque, coronar y mejor captura | ✅ | |
+| Mensajes amables al fallar, explicando por qué | ✅ | |
+| Estrellas según los movimientos respecto al mínimo | ✅ | El mínimo lo calcula el juego; `node src/lessons/verify.mjs` comprueba todos los ejercicios |
+| Desbloqueo según el curso | ✅ | 1º–2º en orden; desde 3º abiertas las de piezas (1–6); 5º–6º todas |
+| Recomendar por dónde seguir | ✅ | El mapa marca la siguiente lección sin estrellas |
 
 ## 6. Aperturas ("saques" de la extraescolar)
 
@@ -82,7 +100,8 @@ _Última actualización: 17/11/2026_
 
 | Requisito | Estado | Notas |
 |---|---|---|
-| Infantil y colorido, piezas con carita | ✅ | Tema "Alegre" |
+| Infantil y colorido, piezas con carita | ✅ | Tema "Alegre" con brillo de juguete |
+| Diseño moderno y atractivo para su edad | ✅ | Tipografía Baloo 2, botones 3D, tarjetas, fondo con manchas de color, microanimaciones |
 | Varios temas a elegir | 🟡 | Hay 2 de 6 |
 | Tema Clásico | ✅ | |
 | Tema Medieval | ⬜ | |
@@ -115,15 +134,17 @@ _Última actualización: 17/11/2026_
 | Total de estrellas en la pantalla de inicio | ✅ | |
 | Guardado en el dispositivo, sin cuentas | ✅ | No se comparte entre móvil y portátil |
 | Medallas / logros | ⬜ | Ej.: primer jaque mate, primer enroque, ganar con negras |
-| Estrellas en lecciones, retos y aperturas | ⬜ | Cuando existan esos modos |
+| Estrellas en lecciones | ✅ | Cuentan en el total de la pantalla de inicio |
+| Estrellas en retos y aperturas | ⬜ | Cuando existan esos modos |
+| Borrar progreso | ✅ | Hay que resolver 3 cuentas adecuadas a su curso (1º: hasta 20; 2º: hasta 100 sin llevadas; 3º: llevadas y tablas del 2, 5 y 10; 4º: todas las tablas; 5º–6º: multiplicar y dividir) |
 
 ---
 
 ## Plan por fases
 
 1. ✅ **Fase 1 — Lo básico**: tablero, ayudas, rivales, dos jugadores, temas Alegre/Clásico, PWA y despliegue.
-2. ⬜ **Fase 2 — Lecciones guiadas**: cómo se mueve cada pieza, con minijuegos.
-3. ⬜ **Fase 3 — Retos / puzzles**.
+2. ✅ **Fase 2 — Lecciones guiadas**: cómo se mueve cada pieza, con minijuegos.
+3. ⬜ **Fase 3 — Retos / puzzles** (adaptados al curso).
 4. ⬜ **Fase 4 — Aperturas**: predefinidas, propias, repetir y jugar desde la posición.
 5. ⬜ **Fase 5 — Más temas y medallas**.
 
@@ -138,3 +159,4 @@ El orden de las fases 2–4 se puede cambiar según lo que estén dando en la ex
 
 - **17/11/2026** — Fase 1 publicada. Mascota renombrada a Nino y juego personalizado para LRM. Corregido el zoom accidental en el móvil.
 - **17/11/2026** — QR en la pantalla principal para abrir el juego en el móvil e instrucciones para instalarlo como app.
+- **17/11/2026** — Fase 2 (lecciones) publicada. Rediseño visual. Animación de la jugada del ordenador. Curso escolar y borrar progreso con cuentas.

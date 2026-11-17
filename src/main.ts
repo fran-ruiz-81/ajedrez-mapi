@@ -11,6 +11,7 @@ import { describeOpponentMove, explainMove, piecesInDanger, warnAfterMove } from
 import type { ScoredMove } from './engine';
 import qrcode from 'qrcode-generator';
 import { showLessons } from './lessons';
+import { adjustRival, COURSES, defaultHelps, mathProblems, sanEs, showNotation } from './level';
 
 const app = document.getElementById('app')!;
 const progress: Progress = load();
@@ -51,7 +52,7 @@ const parseUci = (u: string) => ({
 });
 
 async function computerMove(fen: string, rival: Rival) {
-  const e = rival.engine;
+  const e = adjustRival(rival.engine, progress.course);
   if (e.kind === 'sf') {
     const uci = await bestMove(fen, { skill: e.skill, depth: e.depth });
     if (uci) return parseUci(uci);
@@ -82,21 +83,21 @@ function showHome() {
       <div class="home-hero">
         <div class="mascot big bounce">${mascotSvg('happy')}</div>
         <div>
-          <h1>El ajedrez de ${PLAYER_NAME}</h1>
+          <h1>El ajedrez de <span class="brand">${PLAYER_NAME}</span></h1>
           <p class="sub">¡Hola, ${PLAYER_NAME}! Soy ${MASCOT_NAME}, tu amigo mapache. ¿Jugamos?</p>
-          <p class="stars-total">⭐ ${total} estrellas</p>
+          <p class="stars-total"><span aria-hidden="true">⭐</span> ${total} estrellas</p>
         </div>
       </div>
       <div class="menu">
-        <button class="btn big primary" data-go="rivals">🤖 Jugar contra el ordenador</button>
-        <button class="btn big" data-go="local">👥 Jugar dos personas</button>
-        <button class="btn big" data-go="lessons">📚 Lecciones</button>
-        <button class="btn big soon" disabled>🧩 Retos <small>¡pronto!</small></button>
-        <button class="btn big soon" disabled>🚀 Aperturas <small>¡pronto!</small></button>
+        <button class="btn big primary menu-btn" data-go="rivals"><span class="ico" aria-hidden="true">🤖</span><span class="lbl">Jugar contra el ordenador<em>¡Elige un rival del bosque!</em></span></button>
+        <button class="btn big menu-btn c-blue" data-go="local"><span class="ico" aria-hidden="true">👥</span><span class="lbl">Jugar dos personas<em>Con alguien a tu lado</em></span></button>
+        <button class="btn big menu-btn c-green" data-go="lessons"><span class="ico" aria-hidden="true">📚</span><span class="lbl">Lecciones<em>Aprende cómo mueve cada pieza</em></span></button>
+        <button class="btn big soon menu-btn" disabled><span class="ico" aria-hidden="true">🧩</span><span class="lbl">Retos <small>¡pronto!</small></span></button>
+        <button class="btn big soon menu-btn" disabled><span class="ico" aria-hidden="true">🚀</span><span class="lbl">Aperturas <small>¡pronto!</small></span></button>
       </div>
       ${installSection()}
       <section class="settings">
-        <h2>Tablero</h2>
+        <h2>🎨 Tablero</h2>
         <div class="chips">
           ${THEMES.map(
             (t) =>
@@ -107,8 +108,19 @@ function showHome() {
           <button class="chip soon" disabled>🏰 Medieval</button>
           <button class="chip soon" disabled>🧱 Bloques</button>
         </div>
-        <label class="toggle"><input type="checkbox" id="snd" ${progress.sound ? 'checked' : ''}/> 🔊 Sonido</label>
+        <label class="toggle"><input type="checkbox" class="switch" id="snd" ${progress.sound ? 'checked' : ''}/><span>🔊 Sonido</span></label>
       </section>
+      <section class="settings">
+        <h2>🎒 ¿En qué curso estás?</h2>
+        <div class="chips" role="radiogroup" aria-label="Curso de primaria">
+          ${COURSES.map(
+            (c) => `<button class="chip course ${c === progress.course ? 'on' : ''}" data-course="${c}" role="radio" aria-checked="${c === progress.course}">${c}º</button>`,
+          ).join('')}
+        </div>
+        <p class="settings-note">Los rivales, las explicaciones de ${MASCOT_NAME} y las cuentas se adaptan a tu curso.</p>
+        <button class="btn reset-btn" id="reset">🧹 Borrar progreso</button>
+      </section>
+      <div class="overlay hidden" id="overlay"></div>
     </main>`;
   app.querySelector('[data-go="rivals"]')!.addEventListener('click', showRivals);
   app.querySelector('[data-go="lessons"]')!.addEventListener('click', () =>
@@ -128,6 +140,68 @@ function showHome() {
     progress.sound = (e.target as HTMLInputElement).checked;
     setSoundEnabled(progress.sound);
     persist();
+  });
+  app.querySelectorAll<HTMLElement>('[data-course]').forEach((b) =>
+    b.addEventListener('click', () => {
+      progress.course = Number(b.dataset.course);
+      progress.helps = defaultHelps(progress.course);
+      persist();
+      showHome();
+    }),
+  );
+  app.querySelector('#reset')!.addEventListener('click', askReset);
+}
+
+/** Borrar estrellas: hay que resolver 3 cuentas de su curso, para que no pase sin querer. */
+function askReset() {
+  const overlay = app.querySelector<HTMLElement>('#overlay')!;
+  const problems = mathProblems(progress.course);
+  overlay.innerHTML = `
+    <form class="card reset-card" id="reset-form" novalidate>
+      <div class="mascot">${mascotSvg('think')}</div>
+      <h2>🧹 ¿Borrar las estrellas?</h2>
+      <p>Se borrarán las estrellas de los rivales y de las lecciones. Para hacerlo, resuelve estas 3 cuentas:</p>
+      <div class="sums">
+        ${problems
+          .map(
+            (p, i) => `<label class="sum"><span>${p.text} =</span>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" data-i="${i}" aria-label="Resultado de ${p.text}"/></label>`,
+          )
+          .join('')}
+      </div>
+      <p class="reset-msg" id="reset-msg" aria-live="polite"></p>
+      <div class="row">
+        <button type="button" class="btn" id="reset-cancel">Mejor no</button>
+        <button type="submit" class="btn danger">Borrar</button>
+      </div>
+    </form>`;
+  overlay.classList.remove('hidden');
+  const close = () => overlay.classList.add('hidden');
+  overlay.querySelector('#reset-cancel')!.addEventListener('click', close);
+  overlay.querySelector<HTMLInputElement>('input')!.focus();
+  overlay.querySelector('#reset-form')!.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inputs = [...overlay.querySelectorAll<HTMLInputElement>('input')];
+    let ok = true;
+    inputs.forEach((inp, i) => {
+      const right = inp.value.trim() !== '' && Number(inp.value) === problems[i].answer;
+      inp.classList.toggle('wrong', !right);
+      ok &&= right;
+    });
+    const msg = overlay.querySelector<HTMLElement>('#reset-msg')!;
+    if (!ok) {
+      sfx.error();
+      msg.textContent = 'Alguna cuenta no está bien. ¡Revisa las marcadas en rojo!';
+      return;
+    }
+    progress.stars = {};
+    progress.lessons = {};
+    persist();
+    sfx.hint();
+    overlay.innerHTML = `<div class="card"><div class="mascot big">${mascotSvg('happy')}</div>
+      <h2>¡Cuentas perfectas! ✨</h2><p>Progreso borrado. ¡A conseguir estrellas otra vez!</p>
+      <div class="row"><button class="btn primary" id="reset-ok">¡Vamos!</button></div></div>`;
+    overlay.querySelector('#reset-ok')!.addEventListener('click', showHome);
   });
 }
 
@@ -183,7 +257,7 @@ function showRivals() {
     <main class="screen rivals">
       <header class="topbar"><button class="btn icon" id="back" aria-label="Volver">⬅️</button><h1>Elige tu rival</h1></header>
       <div class="color-pick">
-        <span>Juego con:</span>
+        <span class="color-label">Juego con:</span>
         <button class="chip on" data-color="w">⚪ Blancas</button>
         <button class="chip" data-color="b">⚫ Negras</button>
         <button class="chip" data-color="random">🎲 Sorpresa</button>
@@ -192,11 +266,11 @@ function showRivals() {
         ${RIVALS.map((r, i) => {
           const stars = progress.stars[r.id] ?? 0;
           const open = isUnlocked(i);
-          return `<button class="rival ${open ? '' : 'locked'}" data-rival="${i}" ${open ? '' : 'disabled'}>
+          return `<button class="rival r${i} ${open ? '' : 'locked'}" data-rival="${i}" ${open ? '' : 'disabled'}>
             <span class="rival-emoji">${open ? r.emoji : '🔒'}</span>
-            <span class="rival-info"><strong>${r.name}</strong>
+            <span class="rival-info"><span class="rival-level">Nivel ${i + 1}</span><strong>${r.name}</strong>
               <small>${open ? r.desc : `Gana a ${RIVALS[i - 1].name} para desbloquearlo`}</small></span>
-            <span class="rival-stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>
+            <span class="rival-stars" aria-label="${stars} de 3 estrellas">${'<i class="on">★</i>'.repeat(stars)}${'<i>★</i>'.repeat(3 - stars)}</span>
           </button>`;
         }).join('')}
       </div>
@@ -254,6 +328,7 @@ function startGame(opts: GameOpts) {
           <div class="mascot" id="mascot"></div>
           <p class="bubble" id="bubble"></p>
         </div>
+        <button class="btn replay hidden" id="replay">👀 Ver otra vez su jugada</button>
         <div class="controls">
           <button class="btn ctrl ${progress.helps ? 'on' : ''}" id="helps">👀<span>Ayudas</span></button>
           <button class="btn ctrl" id="hint">💡<span>Pista</span></button>
@@ -283,7 +358,86 @@ function startGame(opts: GameOpts) {
     return chess.moves({ square: from, verbose: true });
   }
 
-  function render() {
+  // Duración de la animación de las jugadas (ms). El ordenador va despacio para que se vea bien.
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CPU_MS = reduceMotion ? 0 : 900;
+  const PLAYER_MS = reduceMotion ? 0 : 220;
+  const replayBtn = () => app.querySelector<HTMLElement>('#replay')!;
+
+  /** Columna/fila en pantalla (0-7) de una casilla, según la orientación del tablero. */
+  function screenPos(sq: string): [number, number] {
+    const file = sq.charCodeAt(0) - 97;
+    const rank = Number(sq[1]);
+    return orientation === 'w' ? [file, 8 - rank] : [7 - file, rank - 1];
+  }
+
+  /** Flecha de la última jugada (del rival, o de cualquiera en el modo dos personas). */
+  function arrowSvg(from: string, to: string, ms: number): string {
+    const [x1, y1] = screenPos(from).map((v) => v + 0.5);
+    const [x2, y2] = screenPos(to).map((v) => v + 0.5);
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    // acortar para que la punta no tape la pieza de destino
+    const k = (len - 0.32) / len;
+    const ex = x1 + (x2 - x1) * k;
+    const ey = y1 + (y2 - y1) * k;
+    const draw = ms ? `style="--len:${len.toFixed(3)};--ms:${ms}ms"` : '';
+    return `<svg class="move-arrow ${ms ? 'drawing' : ''}" viewBox="0 0 8 8" aria-hidden="true" ${draw}>
+      <defs><marker id="arrow-head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" fill="currentColor"/></marker></defs>
+      <line x1="${x1}" y1="${y1}" x2="${ex.toFixed(3)}" y2="${ey.toFixed(3)}" stroke="currentColor" stroke-width=".16"
+        stroke-linecap="round" marker-end="url(#arrow-head)" pathLength="${len.toFixed(3)}"/></svg>`;
+  }
+
+  /** Desliza una pieza ya dibujada en `to` desde la casilla `from`. */
+  function slide(from: string, to: string, ms: number) {
+    const fromEl = boardEl.querySelector<HTMLElement>(`[data-sq="${from}"]`);
+    const toSq = boardEl.querySelector<HTMLElement>(`[data-sq="${to}"]`);
+    const piece = toSq?.querySelector<HTMLElement>('.piece:not(.ghost)');
+    if (!fromEl || !toSq || !piece) return;
+    const a = fromEl.getBoundingClientRect();
+    const b = toSq.getBoundingClientRect();
+    toSq.classList.add('moving');
+    piece
+      .animate(
+        [
+          { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(1.18)` },
+          { transform: `translate(${(a.left - b.left) * 0.15}px, ${(a.top - b.top) * 0.15}px) scale(1.18)`, offset: 0.85 },
+          { transform: 'translate(0, 0) scale(1)' },
+        ],
+        { duration: ms, easing: 'cubic-bezier(.45, 0, .25, 1)' },
+      )
+      .finished.then(() => toSq.classList.remove('moving'))
+      .catch(() => {});
+  }
+
+  /** Anima la jugada `m` (que ya está hecha en el tablero). */
+  function animateMove(m: Move, ms: number) {
+    if (!ms) return;
+    const to = boardEl.querySelector<HTMLElement>(`[data-sq="${m.to}"]`);
+    to?.classList.remove('arrived');
+    // la pieza comida se queda visible y se desvanece cuando llega la otra
+    if (m.captured && to && !m.isEnPassant()) {
+      const ghost = document.createElement('span');
+      ghost.className = 'piece ghost';
+      ghost.innerHTML = pieceSvg(m.captured, m.color === 'w' ? 'b' : 'w', theme);
+      to.prepend(ghost);
+      ghost
+        .animate(
+          [{ opacity: 1, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(1)', offset: 0.8 }, { opacity: 0, transform: 'scale(.4) rotate(-20deg)' }],
+          { duration: ms, fill: 'forwards' },
+        )
+        .finished.then(() => ghost.remove())
+        .catch(() => {});
+    }
+    slide(m.from, m.to, ms);
+    if (m.isKingsideCastle() || m.isQueensideCastle()) {
+      const r = m.to[1];
+      const king = m.isKingsideCastle();
+      slide(`${king ? 'h' : 'a'}${r}`, `${king ? 'f' : 'd'}${r}`, ms);
+    }
+  }
+
+  function render(anim?: { move: Move; ms: number }) {
     const last = chess.history({ verbose: true }).at(-1);
     const targets = selected ? legalTargets(selected) : [];
     const danger = progress.helps ? new Set(piecesInDanger(chess, isCpu ? playerColor : chess.turn())) : new Set();
@@ -322,11 +476,15 @@ function startGame(opts: GameOpts) {
         }</button>`;
       }
     }
+    // flecha de la última jugada: en modo ordenador, solo la de la máquina
+    const showArrow = last && (!isCpu || last.color !== playerColor);
+    if (showArrow) html += arrowSvg(last.from, last.to, anim ? anim.ms : 0);
     boardEl.innerHTML = html;
+    if (anim) animateMove(anim.move, anim.ms);
 
     // turno
     if (over) turnEl.textContent = '';
-    else if (isCpu) turnEl.textContent = myTurn() ? 'Te toca 👇' : 'Pensando… 🤔';
+    else if (isCpu) turnEl.textContent = myTurn() && !thinking ? 'Te toca 👇' : 'Pensando… 🤔';
     else turnEl.textContent = `Mueven ${chess.turn() === 'w' ? '⚪ blancas' : '⚫ negras'}`;
     turnEl.classList.toggle('thinking', thinking);
 
@@ -399,10 +557,10 @@ function startGame(opts: GameOpts) {
     const unlockedNext =
       isCpu && stars > 0 && RIVALS.indexOf(rival!) < RIVALS.length - 1 && isUnlocked(RIVALS.indexOf(rival!) + 1);
     overlay.innerHTML = `
-      <div class="card">
+      <div class="card end-card mood-${mood}">
         <div class="mascot big">${mascotSvg(mood === 'sad' ? 'sad' : 'wow')}</div>
         <h2>${title}</h2>
-        ${stars ? `<p class="big-stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</p>` : ''}
+        ${stars ? `<p class="big-stars" aria-label="${stars} de 3 estrellas">${'<i class="on">★</i>'.repeat(stars)}${'<i>★</i>'.repeat(3 - stars)}</p>` : ''}
         <p>${esc(text)}</p>
         ${unlockedNext ? `<p class="unlock">🔓 ¡Nuevo rival: ${RIVALS[RIVALS.indexOf(rival!) + 1].emoji} ${RIVALS[RIVALS.indexOf(rival!) + 1].name}!</p>` : ''}
         <div class="row">
@@ -422,8 +580,10 @@ function startGame(opts: GameOpts) {
     const move = chess.move({ from, to, promotion });
     selected = null;
     hint = null;
+    replayBtn().classList.add('hidden');
+    render({ move, ms: PLAYER_MS });
     soundFor(move);
-    render();
+    await wait(PLAYER_MS);
     if (checkEnd()) return;
 
     const warning = progress.helps ? warnAfterMove(chess, move) : null;
@@ -441,12 +601,16 @@ function startGame(opts: GameOpts) {
     const fen = chess.fen();
     const [m] = await Promise.all([computerMove(fen, rival!), wait(700)]);
     if (token !== gameToken || over) return;
-    thinking = false;
     const move = chess.move({ from: m.from, to: m.to, promotion: m.promotion ?? 'q' });
-    soundFor(move);
+    render({ move, ms: CPU_MS });
+    await wait(CPU_MS); // el sonido suena cuando la pieza llega
+    if (token !== gameToken) return;
+    thinking = false;
     render();
+    soundFor(move);
     if (checkEnd()) return;
-    let text = `${rival!.emoji} ${describeOpponentMove(move)}`;
+    replayBtn().classList.remove('hidden');
+    let text = `${rival!.emoji} ${describeOpponentMove(move)}${notation(move.san)}`;
     let mood: Mood = move.captured ? 'wow' : 'happy';
     if (chess.inCheck()) {
       text += ' ¡Estás en jaque! Protege a tu rey.';
@@ -462,7 +626,7 @@ function startGame(opts: GameOpts) {
 
   function askPromotion(color: Color): Promise<string | null> {
     return new Promise((resolve) => {
-      overlay.innerHTML = `<div class="card"><h2>¡Tu peón ha llegado al final! 🎉</h2><p>¿En qué pieza lo conviertes?</p>
+      overlay.innerHTML = `<div class="card promo-card"><h2>¡Tu peón ha llegado al final! 🎉</h2><p>¿En qué pieza lo conviertes?</p>
         <div class="row promo">${(['q', 'r', 'b', 'n'] as PieceSymbol[])
           .map((t) => `<button class="btn promo-btn" data-p="${t}" aria-label="${PIECE_NAMES[t]}">${pieceSvg(t, color, theme)}<small>${PIECE_NAMES[t]}</small></button>`)
           .join('')}</div></div>`;
@@ -524,6 +688,11 @@ function startGame(opts: GameOpts) {
     if (isCpu) showRivals();
     else showHome();
   });
+  replayBtn().addEventListener('click', () => {
+    const last = chess.history({ verbose: true }).at(-1);
+    if (!last || thinking) return;
+    render({ move: last, ms: CPU_MS || 1 });
+  });
   app.querySelector('#flip')!.addEventListener('click', () => {
     orientation = orientation === 'w' ? 'b' : 'w';
     render();
@@ -547,6 +716,7 @@ function startGame(opts: GameOpts) {
     chess.undo();
     if (isCpu && chess.turn() !== playerColor) chess.undo();
     usedUndo = true;
+    replayBtn().classList.add('hidden');
     over = false;
     overlay.classList.add('hidden');
     selected = null;
@@ -566,7 +736,7 @@ function startGame(opts: GameOpts) {
     hint = { from: m.from, to: m.to };
     selected = null;
     sfx.hint();
-    say(`💡 ${explainMove(fen, m)}`, 'happy');
+    say(`💡 ${explainMove(fen, m)}${notation(sanOf(fen, m))}`, 'happy');
     render();
   });
 
@@ -582,6 +752,22 @@ function startGame(opts: GameOpts) {
   }
   render();
   if (isCpu && playerColor === 'b') void cpuTurn();
+}
+
+/** " (Cf3)" a partir de 3º; nada en cursos anteriores. */
+function notation(san: string | null): string {
+  if (!san || !showNotation(progress.course)) return '';
+  // en un avance de peón ("e4") la notación ya está en la frase
+  if (/^[a-h][1-8][+#]?$/.test(san)) return '';
+  return ` (${sanEs(san)})`;
+}
+
+function sanOf(fen: string, m: { from: string; to: string; promotion?: string }): string | null {
+  try {
+    return new Chess(fen).move({ from: m.from, to: m.to, promotion: m.promotion }).san;
+  } catch {
+    return null;
+  }
 }
 
 function cap(s: string) {

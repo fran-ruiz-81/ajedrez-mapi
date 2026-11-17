@@ -5,6 +5,7 @@ export interface Progress {
   helps: boolean;
   stars: Record<string, number>; // estrellas por rival
   lessons: Record<string, number>; // estrellas por lección (0-3)
+  course: number; // curso de primaria (1-6): ajusta cuentas, rivales, explicaciones y ayudas
 }
 
 const KEY = 'ajedrez-mapache-v1';
@@ -15,6 +16,7 @@ const DEFAULTS: Progress = {
   helps: true,
   stars: {},
   lessons: {},
+  course: 2,
 };
 
 export function load(): Progress {

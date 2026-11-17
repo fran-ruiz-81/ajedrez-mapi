@@ -43,6 +43,29 @@ const FACE: Record<PieceSymbol, { x: number; y: number; s: number; side?: boolea
   k: { x: 50, y: 50, s: 0.9 },
 };
 
+// Brillos de "juguete" (tema Alegre): manchas blancas semitransparentes en la
+// parte iluminada de cada pieza. Sin degradados ni ids, para que se puedan
+// repetir muchas piezas en la misma página sin conflictos.
+const SHINE: Record<PieceSymbol, string> = {
+  p: `<ellipse cx="43.5" cy="24" rx="5" ry="3.2" transform="rotate(-35 43.5 24)"/>
+      <ellipse cx="41" cy="68" rx="2.4" ry="7" transform="rotate(12 41 68)"/>`,
+  r: `<rect x="30" y="20" width="4" height="15" rx="2"/>
+      <rect x="35.5" y="45" width="4.5" height="28" rx="2.25"/>`,
+  n: `<ellipse cx="61" cy="30" rx="2.6" ry="7" transform="rotate(-35 61 30)"/>
+      <ellipse cx="44" cy="68" rx="2.4" ry="6.5" transform="rotate(18 44 68)"/>`,
+  b: `<ellipse cx="44" cy="29" rx="2.4" ry="6" transform="rotate(30 44 29)"/>
+      <circle cx="48.3" cy="9.4" r="1.6"/>
+      <ellipse cx="41" cy="70" rx="2.2" ry="6" transform="rotate(12 41 70)"/>`,
+  q: `<circle cx="22.6" cy="26.6" r="1.6"/><circle cx="35.6" cy="17.6" r="1.6"/>
+      <circle cx="48.6" cy="11.6" r="1.6"/><circle cx="61.6" cy="17.6" r="1.6"/>
+      <circle cx="74.6" cy="26.6" r="1.6"/>
+      <ellipse cx="39" cy="71" rx="2.2" ry="5.5" transform="rotate(10 39 71)"/>`,
+  k: `<rect x="47.6" y="6" width="2.4" height="8" rx="1.2"/>
+      <ellipse cx="35" cy="42" rx="3" ry="6" transform="rotate(25 35 42)"/>
+      <ellipse cx="39" cy="71" rx="2.2" ry="5.5" transform="rotate(10 39 71)"/>`,
+};
+const BASE_SHINE = '<rect x="27" y="83" width="20" height="3.2" rx="1.6"/>';
+
 function face(type: PieceSymbol): string {
   const f = FACE[type];
   const eye = (cx: number) =>
@@ -66,7 +89,10 @@ export function pieceSvg(type: PieceSymbol, color: Color, theme: Theme): string 
   const detail = DETAILS[type]
     ? `<g stroke="${c.detail}" fill="${c.detail}" stroke-width="3" stroke-linecap="round">${DETAILS[type]}</g>`
     : '';
-  return `<svg viewBox="0 0 100 100" class="piece-svg" aria-hidden="true">${body}${detail}${
+  const gloss = theme.gloss
+    ? `<g fill="#fff" opacity="${color === 'w' ? 0.9 : 0.45}" stroke="none">${SHINE[type]}${BASE_SHINE}</g>`
+    : '';
+  return `<svg viewBox="0 0 100 100" class="piece-svg" aria-hidden="true">${body}${detail}${gloss}${
     theme.faces ? face(type) : ''
   }</svg>`;
 }

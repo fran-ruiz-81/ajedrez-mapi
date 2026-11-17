@@ -1,0 +1,120 @@
+/* Lecciones: solo lo específico. El resto (botones, tablero, bocadillo, ventanas y el
+   diseño adaptable de la pantalla) viene de las clases compartidas de style.css. */
+
+/* ═════════════ Mapa de lecciones ═════════════ */
+.lessons-map { max-width: 860px; display: grid; gap: 14px; }
+.l-total { cursor: default; white-space: nowrap; }
+.l-map {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.l-card {
+  width: 100%; height: 100%;
+  position: relative; display: grid; justify-items: center; gap: 2px;
+  padding: 12px 8px 10px; border: 3px solid #fff; border-radius: var(--radius, 18px);
+  background: #fff; cursor: pointer; text-align: center;
+  box-shadow: 0 6px 0 var(--edge, #0002), 0 10px 24px rgb(43 35 80 / .1);
+  transition: transform .1s ease-out, box-shadow .1s ease-out;
+}
+.l-card:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge, #0002); }
+.l-card strong { font-size: 1.15rem; line-height: 1.15; }
+.l-card .l-icon { width: 64px; height: 64px; display: grid; place-items: center; font-size: 2.2rem; }
+.l-card .l-icon svg { width: 100%; height: 100%; }
+.l-num {
+  position: absolute; top: 8px; left: 8px; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; font-size: 1rem;
+  background: var(--accent-soft, #ece8ff); color: var(--accent-dark, #4630a8);
+}
+.l-card .l-stars { font-size: 1.4rem; }
+.l-card.locked { background: #f7f6fb; color: var(--ink-soft, #777); cursor: default; box-shadow: none; opacity: .75; }
+.l-card.l-next { border-color: var(--primary, #ff8a3d); animation: l-glow 1.6s ease-in-out infinite; }
+@keyframes l-glow { 50% { box-shadow: 0 6px 0 var(--primary-dark, #d96a1f), 0 0 0 6px #ff8a3d44; } }
+.lessons-map > .talk .bubble { font-size: 1.1rem; }
+@media (max-width: 420px) {
+  .l-map { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .l-card { padding: 8px 6px 6px; }
+  .l-card .l-icon { width: 46px; height: 46px; }
+  .l-card .l-emoji { font-size: 2.1rem; }
+  .l-card .l-stars { font-size: 1.2rem; }
+  .l-card strong { font-size: 1.05rem; }
+}
+
+/* ═════════════ Pantalla de lección ═════════════ */
+.lesson .topbar h1 { display: flex; align-items: center; gap: 6px; }
+.l-title-icon { width: 1.6em; height: 1.6em; flex-shrink: 0; display: inline-block; }
+.l-title-icon svg { width: 100%; height: 100%; display: block; }
+.l-title-icon { display: inline-grid; place-items: center; }
+.l-title-icon .l-emoji { font-size: 1.1em; }
+.l-card .l-emoji { font-size: 2.6rem; line-height: 1; }
+
+/* progreso: un punto por ejercicio */
+.l-dots { display: flex; gap: 6px; flex-shrink: 0; }
+.l-dots i {
+  width: 14px; height: 14px; border-radius: 50%; background: #fff;
+  box-shadow: inset 0 0 0 3px #c9c3dc;
+}
+.l-dots i.now { background: var(--primary, #ff8a3d); box-shadow: 0 0 0 3px #fff; transform: scale(1.15); }
+.l-dots i.done { background: var(--green, #36b37e); box-shadow: 0 0 0 3px #fff; }
+
+.l-panel { align-content: start; }
+.l-info {
+  background: var(--card, #fffe); border: 3px solid #fff; border-radius: var(--radius-sm, 16px);
+  padding: 6px 12px; display: grid; gap: 4px;
+}
+.l-info[hidden] { display: none; }
+.l-moves { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 1.05rem; font-weight: 700; }
+.l-moves b { font-size: 1.2rem; }
+.l-values { display: flex; justify-content: space-around; gap: 4px; }
+.l-values > span { display: inline-flex; align-items: center; gap: 2px; font-size: 1.15rem; }
+.l-values .mini { width: 30px; height: 30px; }
+.l-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.l-actions .btn { font-size: 1.15rem; padding: 14px 8px; }
+.l-actions .l-go { grid-column: 1 / -1; text-align: center; }
+
+/* estrellas para recoger */
+.sq.l-star .l-star-ico {
+  font-size: calc(var(--board) / 13); line-height: 1; pointer-events: none;
+  filter: drop-shadow(0 2px 2px #0004);
+  animation: l-twinkle 1.6s ease-in-out infinite;
+}
+@keyframes l-twinkle { 50% { transform: scale(1.15) rotate(8deg); } }
+.l-star-pop {
+  position: absolute; z-index: 3; font-size: calc(var(--board) / 11); pointer-events: none;
+  animation: l-fly .8s ease-out forwards;
+}
+@keyframes l-fly { to { transform: translateY(-80%) scale(1.6); opacity: 0; } }
+
+/* casillas atacadas por el rival: no se puede parar en ellas */
+.sq.l-attacked::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(45deg, #ff3b3b55 0 6px, #ff3b3b22 6px 12px);
+  box-shadow: inset 0 0 0 2px #ff3b3b66;
+}
+
+/* demostración: casillas a las que llega la pieza */
+.sq.l-mark::after {
+  content: ''; position: absolute; width: 38%; height: 38%; border-radius: 50%;
+  background: #4cc9f0; box-shadow: 0 0 0 4px #ffffffaa, 0 0 14px #4cc9f0;
+  animation: l-wave 1.8s ease-in-out infinite; animation-delay: var(--d, 0ms);
+}
+.sq.l-mark:has(.piece)::after { width: auto; height: auto; inset: 4%; background: none; border: 5px solid #4cc9f0; }
+@keyframes l-wave { 0%, 100% { transform: scale(.6); opacity: .55; } 30% { transform: scale(1); opacity: 1; } }
+
+/* error: la casilla tiembla */
+.sq.l-no { animation: l-shake .35s; }
+.sq.l-no::before { content: ''; position: absolute; inset: 0; background: #ff5d7366; }
+@keyframes l-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* en móvil horizontal, todo más compacto */
+@media (orientation: landscape) and (max-height: 500px) {
+  .l-info { padding: 4px 10px; }
+  .l-moves { font-size: .95rem; }
+  .l-actions .btn { padding: 8px; font-size: 1rem; }
+  .l-dots i { width: 11px; height: 11px; }
+}
+@media (max-width: 420px) {
+  .l-dots { gap: 4px; }
+  .l-dots i { width: 11px; height: 11px; }
+}
+

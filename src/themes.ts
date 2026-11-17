@@ -13,7 +13,8 @@ export interface Theme {
   white: PieceColors;
   black: PieceColors;
   faces: boolean; // piezas con carita
-  bg: string; // fondo de la página
+  gloss?: boolean; // brillo de "juguete" en las piezas
+  bg: string; // fondo de la página (puede llevar varias capas)
 }
 
 // Para añadir un tema nuevo (medieval, dinosaurios, bloques...) basta con
@@ -23,12 +24,19 @@ export const THEMES: Theme[] = [
     id: 'infantil',
     name: 'Alegre',
     emoji: '🌈',
-    light: '#fdf3d0',
-    dark: '#86c27f',
-    white: { fill: '#fff6dc', stroke: '#d9822b', detail: '#d9822b' },
-    black: { fill: '#5b4bb7', stroke: '#2e2470', detail: '#c9c2ff' },
+    light: '#fff4d6',
+    dark: '#7fc77a',
+    white: { fill: '#ffefcc', stroke: '#e0761f', detail: '#e0761f' },
+    black: { fill: '#6a50d8', stroke: '#2c1f78', detail: '#d6ceff' },
     faces: true,
-    bg: 'linear-gradient(160deg, #bfe9ff 0%, #e8f7d4 100%)',
+    gloss: true,
+    bg: [
+      'radial-gradient(circle at 8% 12%, #ffd86b88 0, #ffd86b00 22%)',
+      'radial-gradient(circle at 92% 22%, #ff9ec488 0, #ff9ec400 24%)',
+      'radial-gradient(circle at 85% 92%, #8fe3a688 0, #8fe3a600 26%)',
+      'radial-gradient(circle at 12% 88%, #9fd8ff99 0, #9fd8ff00 26%)',
+      'linear-gradient(165deg, #b9e6ff 0%, #dff4ff 45%, #effbe0 100%)',
+    ].join(', '),
   },
   {
     id: 'clasico',
@@ -39,7 +47,11 @@ export const THEMES: Theme[] = [
     white: { fill: '#ffffff', stroke: '#222222', detail: '#222222' },
     black: { fill: '#333333', stroke: '#111111', detail: '#eeeeee' },
     faces: false,
-    bg: 'linear-gradient(160deg, #e9e2d6 0%, #cdbfa8 100%)',
+    bg: [
+      'radial-gradient(circle at 10% 10%, #ffffff88 0, #ffffff00 25%)',
+      'radial-gradient(circle at 90% 90%, #b5886333 0, #b5886300 30%)',
+      'linear-gradient(165deg, #f1ebe0 0%, #e2d6c2 55%, #d2c1a6 100%)',
+    ].join(', '),
   },
 ];
 
