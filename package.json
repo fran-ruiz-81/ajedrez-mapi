@@ -1,0 +1,21 @@
+{
+  "name": "ajedrez-mapache",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "engine": "node scripts/copy-stockfish.mjs",
+    "dev": "npm run engine && vite --host",
+    "build": "npm run engine && tsc --noEmit && vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "stockfish": "^19.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "license": "GPL-3.0"
+}
