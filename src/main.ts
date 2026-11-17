@@ -11,6 +11,8 @@ import { describeOpponentMove, explainMove, piecesInDanger, warnAfterMove } from
 import type { ScoredMove } from './engine';
 import qrcode from 'qrcode-generator';
 import { showLessons } from './lessons';
+import { showPuzzles } from './puzzles';
+import { showOpenings } from './openings';
 import { adjustRival, COURSES, defaultHelps, mathProblems, sanEs, showNotation } from './level';
 
 const app = document.getElementById('app')!;
@@ -77,7 +79,7 @@ function isUnlocked(i: number) {
 }
 
 function showHome() {
-  const total = [...Object.values(progress.stars), ...Object.values(progress.lessons)].reduce((a, b) => a + b, 0);
+  const total = [...Object.values(progress.stars), ...Object.values(progress.lessons), ...Object.values(progress.puzzles), ...Object.values(progress.openings)].reduce((a, b) => a + b, 0);
   app.innerHTML = `
     <main class="screen home">
       <div class="home-hero">
@@ -92,8 +94,8 @@ function showHome() {
         <button class="btn big primary menu-btn" data-go="rivals"><span class="ico" aria-hidden="true">🤖</span><span class="lbl">Jugar contra el ordenador<em>¡Elige un rival del bosque!</em></span></button>
         <button class="btn big menu-btn c-blue" data-go="local"><span class="ico" aria-hidden="true">👥</span><span class="lbl">Jugar dos personas<em>Con alguien a tu lado</em></span></button>
         <button class="btn big menu-btn c-green" data-go="lessons"><span class="ico" aria-hidden="true">📚</span><span class="lbl">Lecciones<em>Aprende cómo mueve cada pieza</em></span></button>
-        <button class="btn big soon menu-btn" disabled><span class="ico" aria-hidden="true">🧩</span><span class="lbl">Retos <small>¡pronto!</small></span></button>
-        <button class="btn big soon menu-btn" disabled><span class="ico" aria-hidden="true">🚀</span><span class="lbl">Aperturas <small>¡pronto!</small></span></button>
+        <button class="btn big menu-btn c-pink" data-go="puzzles"><span class="ico" aria-hidden="true">🧩</span><span class="lbl">Retos<em>Encuentra la mejor jugada</em></span></button>
+        <button class="btn big menu-btn c-yellow" data-go="openings"><span class="ico" aria-hidden="true">🚀</span><span class="lbl">Aperturas<em>Practica cómo empezar</em></span></button>
       </div>
       ${installSection()}
       <section class="settings">
@@ -123,6 +125,9 @@ function showHome() {
       <div class="overlay hidden" id="overlay"></div>
     </main>`;
   app.querySelector('[data-go="rivals"]')!.addEventListener('click', showRivals);
+  const section = () => ({ app, progress, persist, theme, goHome: showHome, startGame, rivals: RIVALS });
+  app.querySelector('[data-go="puzzles"]')!.addEventListener('click', () => showPuzzles(section()));
+  app.querySelector('[data-go="openings"]')!.addEventListener('click', () => showOpenings(section()));
   app.querySelector('[data-go="lessons"]')!.addEventListener('click', () =>
     showLessons({ app, progress, persist, theme, goHome: showHome }),
   );
@@ -160,7 +165,7 @@ function askReset() {
     <form class="card reset-card" id="reset-form" novalidate>
       <div class="mascot">${mascotSvg('think')}</div>
       <h2>🧹 ¿Borrar las estrellas?</h2>
-      <p>Se borrarán las estrellas de los rivales y de las lecciones. Para hacerlo, resuelve estas 3 cuentas:</p>
+      <p>Se borrarán las estrellas de rivales, lecciones, retos y aperturas (tus aperturas guardadas se quedan). Para hacerlo, resuelve estas 3 cuentas:</p>
       <div class="sums">
         ${problems
           .map(
@@ -196,6 +201,8 @@ function askReset() {
     }
     progress.stars = {};
     progress.lessons = {};
+    progress.puzzles = {};
+    progress.openings = {};
     persist();
     sfx.hint();
     overlay.innerHTML = `<div class="card"><div class="mascot big">${mascotSvg('happy')}</div>
@@ -292,14 +299,21 @@ function showRivals() {
 
 // ───────────────────────────────── Partida ─────────────────────────────────
 
-interface GameOpts {
+export interface GameOpts {
   mode: 'cpu' | 'local';
   rival?: Rival;
   playerColor?: Color;
+  /** Empezar desde una posición (p. ej. tras una apertura). No da estrellas de rival. */
+  fen?: string;
+  /** Primer mensaje de Nino (si no, el saludo normal). */
+  intro?: string;
+  /** Adónde volver al salir (por defecto, rivales o inicio). */
+  onExit?: () => void;
 }
 
-function startGame(opts: GameOpts) {
-  const chess = new Chess();
+export function startGame(opts: GameOpts) {
+  const chess = new Chess(opts.fen);
+  const fromPosition = !!opts.fen;
   const playerColor: Color = opts.playerColor ?? 'w';
   let orientation: Color = playerColor;
   let selected: Square | null = null;
@@ -523,12 +537,14 @@ function startGame(opts: GameOpts) {
     if (chess.isCheckmate()) {
       const winner: Color = chess.turn() === 'w' ? 'b' : 'w';
       if (isCpu && winner === playerColor) {
-        stars = Math.max(1, 3 - (usedHint ? 1 : 0) - (usedUndo ? 1 : 0));
-        progress.stars[rival!.id] = Math.max(progress.stars[rival!.id] ?? 0, stars);
-        persist();
+        stars = fromPosition ? 0 : Math.max(1, 3 - (usedHint ? 1 : 0) - (usedUndo ? 1 : 0));
+        if (!fromPosition) {
+          progress.stars[rival!.id] = Math.max(progress.stars[rival!.id] ?? 0, stars);
+          persist();
+        }
         title = `¡Has ganado, ${PLAYER_NAME}! 🏆`;
         text = `¡Jaque mate a ${rival!.name}! ${
-          stars < 3 ? 'Gana sin pistas ni deshacer para conseguir 3 estrellas.' : '¡Partida perfecta!'
+          fromPosition ? '¡Muy bien jugado!' : stars < 3 ? 'Gana sin pistas ni deshacer para conseguir 3 estrellas.' : '¡Partida perfecta!'
         }`;
         sfx.win();
         confetti();
@@ -571,7 +587,7 @@ function startGame(opts: GameOpts) {
       </div>`;
     overlay.classList.remove('hidden');
     overlay.querySelector('#again')!.addEventListener('click', () => startGame(opts));
-    overlay.querySelector('#menu')!.addEventListener('click', isCpu ? showRivals : showHome);
+    overlay.querySelector('#menu')!.addEventListener('click', opts.onExit ?? (isCpu ? showRivals : showHome));
     overlay.querySelector('#see')!.addEventListener('click', () => overlay.classList.add('hidden'));
     return true;
   }
@@ -685,7 +701,8 @@ function startGame(opts: GameOpts) {
 
   app.querySelector('#back')!.addEventListener('click', () => {
     gameToken++;
-    if (isCpu) showRivals();
+    if (opts.onExit) opts.onExit();
+    else if (isCpu) showRivals();
     else showHome();
   });
   replayBtn().addEventListener('click', () => {
@@ -741,7 +758,9 @@ function startGame(opts: GameOpts) {
   });
 
   // inicio
-  if (isCpu) {
+  if (opts.intro) {
+    say(opts.intro);
+  } else if (isCpu) {
     say(
       playerColor === 'w'
         ? `¡Hola, ${PLAYER_NAME}! Soy ${MASCOT_NAME}. Juegas con las blancas contra ${rival!.name}. ¡Empiezas tú!`
@@ -751,7 +770,7 @@ function startGame(opts: GameOpts) {
     say(`¡Hola! Soy ${MASCOT_NAME}. Empiezan las blancas. ¡Que gane el mejor!`);
   }
   render();
-  if (isCpu && playerColor === 'b') void cpuTurn();
+  if (isCpu && chess.turn() !== playerColor) void cpuTurn();
 }
 
 /** " (Cf3)" a partir de 3º; nada en cursos anteriores. */

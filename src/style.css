@@ -113,6 +113,8 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 .menu-btn.primary em { color: #fff; opacity: .95; text-shadow: none; }
 .menu-btn.c-blue .ico { background: #e1f2ff; }
 .menu-btn.c-green .ico { background: #ddf6e8; }
+.menu-btn.c-pink .ico { background: #ffe3ee; }
+.menu-btn.c-yellow .ico { background: #fff3c4; }
 .btn.soon {
   --bg: #ffffff8c; --edge-c: transparent; box-shadow: none;
   border: 3px dashed #ffffffd9; opacity: .85; color: var(--ink-soft);
