@@ -209,7 +209,7 @@ export function showLessons(ctx: LessonsContext) {
           const rank = 8 - r;
           const sq = FILES[f] + rank;
           const c = cell(sq);
-          const light = (f + rank) % 2 === 1;
+          const light = (f + rank) % 2 === 0; // a1 oscura, h1 clara
           const cls = ['sq', light ? 'light' : 'dark', ...c.cls];
           if (last && (sq === last.from || sq === last.to)) cls.push('last');
           if (last && sq === last.to) cls.push('arrived');

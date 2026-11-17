@@ -40,8 +40,8 @@ _Última actualización: 17/11/2026_
 | Contra el ordenador | ✅ | |
 | Dos personas en el mismo dispositivo | ✅ | |
 | Lecciones guiadas (pieza a pieza, minijuegos) | ✅ | 10 lecciones; ver sección 6 bis |
-| Retos / puzzles (mate en 1, pieza sin defender…) | ⬜ | Fase 3 |
-| Aperturas | ⬜ | Fase 4, ver sección 6 |
+| Retos / puzzles (mate en 1, pieza sin defender…) | ✅ | Ver sección 6 ter |
+| Aperturas | ✅ | Ver sección 6 |
 
 ## 4. Rival ordenador
 
@@ -86,15 +86,29 @@ _Última actualización: 17/11/2026_
 | Desbloqueo según el curso | ✅ | 1º–2º en orden; desde 3º abiertas las de piezas (1–6); 5º–6º todas |
 | Recomendar por dónde seguir | ✅ | El mapa marca la siguiente lección sin estrellas |
 
+## 6 ter. Retos (Fase 3)
+
+| Requisito | Estado | Notas |
+|---|---|---|
+| Colecciones por tema, de fácil a difícil | ✅ | 104 retos en 10 colecciones: Mate en 1, ¡Pieza gratis!, ¡Sálvala!, Jaque que gana, Mate en 2, Horquillas, Clavadas, Gana en 2, Mate en 3, Combinaciones |
+| Adaptado al curso | ✅ | 1º–2º: 4 colecciones (44 retos); 3º–4º: 8 (84); 5º–6º: todas. Las de mayores se abren antes con buena media de estrellas |
+| Cada reto verificado con Stockfish (solución única) | ✅ | `node src/puzzles/verify.mjs` (~2 min) |
+| Pista en dos pasos (pieza, luego casilla) y explicación concreta al fallar | ✅ | |
+| La jugada del rival se ve deslizándose despacio | ✅ | Sin flecha |
+| Estrellas por reto y reto del día | ✅ | |
+| Atribución de los retos de Lichess (CC0) | ✅ | README y pie del mapa |
+
 ## 6. Aperturas ("saques" de la extraescolar)
 
 | Requisito | Estado | Notas |
 |---|---|---|
-| Aperturas predefinidas para principiantes con explicación | ⬜ | Italiana, Española, Cuatro Caballos, Londres… |
-| Que el padre añada las aperturas de clase | ⬜ | Moviendo piezas en el tablero o pegando la notación |
-| Modo repetir: el juego hace las jugadas del rival y él acierta las suyas | ⬜ | Si falla, se le enseña la buena |
-| Jugar contra el ordenador desde la posición de la apertura | ⬜ | |
-| Posiciones empezadas para practicar lo aprendido | ⬜ | |
+| Aperturas predefinidas para principiantes con explicación | ✅ | 10 (5 con blancas, 5 con negras): Italiana, Cuatro Caballos, Española, Escocesa, Londres, Italiana con negras, Dos Caballos, Siciliana Dragón, Caro-Kann, Gambito de Dama rehusado. `src/openings/data.ts` |
+| Longitud según el curso | ✅ | 1º–2º: 6–8 jugadas; desde 3º: 11–12, con notación española |
+| Ver la apertura paso a paso con explicación de cada jugada | ✅ | Con flechas que enseñan |
+| Que el padre añada las aperturas de clase | ✅ | Moviendo piezas o pegando la notación (inglesa o española, con o sin números). Se pueden editar y borrar |
+| Modo repetir: el juego hace las jugadas del rival y él acierta las suyas | ✅ | Si falla, se le enseña la buena; estrellas según fallos |
+| Jugar contra el ordenador desde la posición de la apertura | ✅ | Con un rival ya desbloqueado; al salir vuelve a la apertura |
+| Posiciones empezadas para practicar lo aprendido | ✅ | Con «Jugar desde la posición» de cada apertura (también las del padre) |
 
 ## 7. Aspecto visual
 
@@ -102,12 +116,14 @@ _Última actualización: 17/11/2026_
 |---|---|---|
 | Infantil y colorido, piezas con carita | ✅ | Tema "Alegre" con brillo de juguete |
 | Diseño moderno y atractivo para su edad | ✅ | Tipografía Baloo 2, botones 3D, tarjetas, fondo con manchas de color, microanimaciones |
-| Varios temas a elegir | 🟡 | Hay 2 de 6 |
+| Varios temas a elegir | ✅ | Hay 6 |
 | Tema Clásico | ✅ | |
-| Tema Medieval | ⬜ | |
-| Tema Dinosaurios | ⬜ | |
-| Tema "Bloques" (inspirado en Minecraft, diseño propio) | ⬜ | Sin usar la marca ni su aspecto exacto |
-| Tema "Construcción" (inspirado en LEGO, diseño propio) | ⬜ | Sin usar la marca ni su aspecto exacto |
+| Tema Medieval | ✅ | Caballeros, castillo, piedra y madera |
+| Tema Dinosaurios | ✅ | T-rex rey, huevos de peón, selva y volcán |
+| Tema "Bloques" (inspirado en Minecraft, diseño propio) | ✅ | Pixel art propio; sin la marca ni su aspecto exacto |
+| Tema "Construcción" (inspirado en LEGO, diseño propio) | ✅ | Ladrillos encajables propios; sin la marca ni su aspecto exacto |
+| Icono de la app con el Nino actual | ✅ | |
+| Arrastrar piezas además de tocar pieza y casilla | ✅ | En todos los tableros (`src/drag.ts`), con ratón y con el dedo |
 | Animaciones y confeti al ganar | ✅ | |
 
 ## 8. Mascota
@@ -133,7 +149,7 @@ _Última actualización: 17/11/2026_
 | Estrellas por rival (3 = ganar sin pistas ni deshacer) | ✅ | |
 | Total de estrellas en la pantalla de inicio | ✅ | |
 | Guardado en el dispositivo, sin cuentas | ✅ | No se comparte entre móvil y portátil |
-| Medallas / logros | ⬜ | Ej.: primer jaque mate, primer enroque, ganar con negras |
+| Medallas / logros | ✅ | 20 medallas en 5 grupos (partidas, lecciones, retos, aperturas, estrellas), aviso al conseguirlas y vitrina. `src/medals.ts` |
 | Estrellas en lecciones | ✅ | Cuentan en el total de la pantalla de inicio |
 | Estrellas en retos y aperturas | ⬜ | Cuando existan esos modos |
 | Borrar progreso | ✅ | Hay que resolver 3 cuentas adecuadas a su curso (1º: hasta 20; 2º: hasta 100 sin llevadas; 3º: llevadas y tablas del 2, 5 y 10; 4º: todas las tablas; 5º–6º: multiplicar y dividir) |
@@ -144,19 +160,19 @@ _Última actualización: 17/11/2026_
 
 1. ✅ **Fase 1 — Lo básico**: tablero, ayudas, rivales, dos jugadores, temas Alegre/Clásico, PWA y despliegue.
 2. ✅ **Fase 2 — Lecciones guiadas**: cómo se mueve cada pieza, con minijuegos.
-3. ⬜ **Fase 3 — Retos / puzzles** (adaptados al curso).
-4. ⬜ **Fase 4 — Aperturas**: predefinidas, propias, repetir y jugar desde la posición.
-5. ⬜ **Fase 5 — Más temas y medallas**.
+3. ✅ **Fase 3 — Retos / puzzles** (adaptados al curso).
+4. ✅ **Fase 4 — Aperturas**: predefinidas, propias, repetir y jugar desde la posición.
+5. ✅ **Fase 5 — Más temas y medallas**, icono nuevo y arrastrar piezas.
 
 El orden de las fases 2–4 se puede cambiar según lo que estén dando en la extraescolar.
 
 ## Ideas sin decidir
 
-- Arrastrar piezas además de tocar origen y destino.
 - Sincronizar el progreso entre dispositivos (necesitaría un servicio con cuenta).
 
 ## Registro de cambios
 
 - **17/11/2026** — Fase 1 publicada. Mascota renombrada a Nino y juego personalizado para LRM. Corregido el zoom accidental en el móvil.
 - **17/11/2026** — QR en la pantalla principal para abrir el juego en el móvil e instrucciones para instalarlo como app.
+- **18/11/2026** — Fases 3 (retos), 4 (aperturas) y 5 (4 temas nuevos y medallas) publicadas. Icono nuevo. Arrastrar piezas. Quitada la flecha de la jugada del ordenador. Corregido el color de las casillas (a1 debe ser oscura).
 - **17/11/2026** — Fase 2 (lecciones) publicada. Rediseño visual. Animación de la jugada del ordenador. Curso escolar y borrar progreso con cuentas.

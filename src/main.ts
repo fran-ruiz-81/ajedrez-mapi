@@ -13,6 +13,8 @@ import qrcode from 'qrcode-generator';
 import { showLessons } from './lessons';
 import { showPuzzles } from './puzzles';
 import { showOpenings } from './openings';
+import { enableDrag, justDropped } from './drag';
+import { celebrate, checkMedals, MEDALS, recordEvent, showMedals } from './medals';
 import { adjustRival, COURSES, defaultHelps, mathProblems, sanEs, showNotation } from './level';
 
 const app = document.getElementById('app')!;
@@ -24,10 +26,18 @@ function applyTheme() {
   document.body.style.background = theme.bg;
   document.documentElement.style.setProperty('--sq-light', theme.light);
   document.documentElement.style.setProperty('--sq-dark', theme.dark);
+  // texturas de casilla (temas con dibujos); si no hay, el color liso
+  document.documentElement.style.setProperty('--sq-light-bg', theme.lightTex ?? theme.light);
+  document.documentElement.style.setProperty('--sq-dark-bg', theme.darkTex ?? theme.dark);
 }
 applyTheme();
 
-const persist = () => save(progress);
+/** Guarda el progreso y celebra las medallas nuevas que se hayan conseguido. */
+const persist = () => {
+  const fresh = checkMedals(progress);
+  save(progress);
+  if (fresh.length) celebrate(fresh);
+};
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 // ───────────────────────── Motor propio en un Worker ─────────────────────────
@@ -87,7 +97,10 @@ function showHome() {
         <div>
           <h1>El ajedrez de <span class="brand">${PLAYER_NAME}</span></h1>
           <p class="sub">¡Hola, ${PLAYER_NAME}! Soy ${MASCOT_NAME}, tu amigo mapache. ¿Jugamos?</p>
-          <p class="stars-total"><span aria-hidden="true">⭐</span> ${total} estrellas</p>
+          <div class="hero-badges">
+            <p class="stars-total"><span aria-hidden="true">⭐</span> ${total} estrellas</p>
+            <button class="btn medals-btn" data-go="medals"><span aria-hidden="true">🏅</span> ${Object.keys(progress.medals).length}/${MEDALS.length} medallas</button>
+          </div>
         </div>
       </div>
       <div class="menu">
@@ -106,9 +119,6 @@ function showHome() {
               `<button class="chip ${t.id === theme.id ? 'on' : ''}" data-theme="${t.id}">
                  <span class="chip-piece">${pieceSvg('n', 'w', t)}</span>${t.emoji} ${t.name}</button>`,
           ).join('')}
-          <button class="chip soon" disabled>🦖 Dinosaurios</button>
-          <button class="chip soon" disabled>🏰 Medieval</button>
-          <button class="chip soon" disabled>🧱 Bloques</button>
         </div>
         <label class="toggle"><input type="checkbox" class="switch" id="snd" ${progress.sound ? 'checked' : ''}/><span>🔊 Sonido</span></label>
       </section>
@@ -126,6 +136,7 @@ function showHome() {
     </main>`;
   app.querySelector('[data-go="rivals"]')!.addEventListener('click', showRivals);
   const section = () => ({ app, progress, persist, theme, goHome: showHome, startGame, rivals: RIVALS });
+  app.querySelector('[data-go="medals"]')!.addEventListener('click', () => showMedals(app, progress, showHome));
   app.querySelector('[data-go="puzzles"]')!.addEventListener('click', () => showPuzzles(section()));
   app.querySelector('[data-go="openings"]')!.addEventListener('click', () => showOpenings(section()));
   app.querySelector('[data-go="lessons"]')!.addEventListener('click', () =>
@@ -165,7 +176,7 @@ function askReset() {
     <form class="card reset-card" id="reset-form" novalidate>
       <div class="mascot">${mascotSvg('think')}</div>
       <h2>🧹 ¿Borrar las estrellas?</h2>
-      <p>Se borrarán las estrellas de rivales, lecciones, retos y aperturas (tus aperturas guardadas se quedan). Para hacerlo, resuelve estas 3 cuentas:</p>
+      <p>Se borrarán las estrellas y las medallas (tus aperturas guardadas se quedan). Para hacerlo, resuelve estas 3 cuentas:</p>
       <div class="sums">
         ${problems
           .map(
@@ -203,6 +214,8 @@ function askReset() {
     progress.lessons = {};
     progress.puzzles = {};
     progress.openings = {};
+    progress.medals = {};
+    progress.events = {};
     persist();
     sfx.hint();
     overlay.innerHTML = `<div class="card"><div class="mascot big">${mascotSvg('happy')}</div>
@@ -443,7 +456,7 @@ export function startGame(opts: GameOpts) {
         const rank = orientation === 'w' ? 8 - r : r + 1;
         const sq = (files[file] + rank) as Square;
         const p = chess.get(sq);
-        const light = (file + rank) % 2 === 1;
+        const light = (file + rank) % 2 === 0; // a1 oscura, h1 clara
         const t = targets.find((m) => m.to === sq);
         const cls = [
           'sq',
@@ -510,6 +523,7 @@ export function startGame(opts: GameOpts) {
     if (chess.isCheckmate()) {
       const winner: Color = chess.turn() === 'w' ? 'b' : 'w';
       if (isCpu && winner === playerColor) {
+        if (playerColor === 'b' && !fromPosition) recordEvent(progress, 'winBlack');
         stars = fromPosition ? 0 : Math.max(1, 3 - (usedHint ? 1 : 0) - (usedUndo ? 1 : 0));
         if (!fromPosition) {
           progress.stars[rival!.id] = Math.max(progress.stars[rival!.id] ?? 0, stars);
@@ -570,7 +584,11 @@ export function startGame(opts: GameOpts) {
     selected = null;
     hint = null;
     replayBtn().classList.add('hidden');
-    render({ move, ms: PLAYER_MS });
+    if (move.isKingsideCastle() || move.isQueensideCastle()) {
+      recordEvent(progress, 'castle');
+      persist();
+    }
+    render({ move, ms: justDropped() ? 0 : PLAYER_MS }); // si la ha arrastrado, ya está en su sitio
     soundFor(move);
     await wait(PLAYER_MS);
     if (checkEnd()) return;
@@ -786,6 +804,7 @@ function confetti() {
 // El zoom por doble toque lo evita `touch-action: manipulation` en el CSS.
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
+enableDrag();
 showHome();
 
 // Instalable y sin conexión (PWA)

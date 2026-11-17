@@ -83,6 +83,7 @@ function face(type: PieceSymbol): string {
 }
 
 export function pieceSvg(type: PieceSymbol, color: Color, theme: Theme): string {
+  if (theme.draw) return theme.draw(type, color); // temas con dibujos propios (src/themes/)
   const c = color === 'w' ? theme.white : theme.black;
   const body = `<g fill="${c.fill}" stroke="${c.stroke}" stroke-width="3" stroke-linejoin="round">
       ${SHAPES[type]}${BASE}</g>`;

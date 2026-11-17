@@ -57,6 +57,11 @@ El despliegue es automático: un push a `main` ejecuta `.github/workflows/deploy
 | `src/lessons.ts`, `src/lessons.css` | Mapa de lecciones y pantalla de lección |
 | `src/lessons/data.ts` | Contenido de las lecciones y ejercicios |
 | `src/lessons/engine.ts` | Lógica de tableros de lección y cálculo del mínimo de movimientos (sin DOM) |
+| `src/puzzles.ts`, `src/puzzles/` | Retos: colecciones (`collections.ts`), datos generados (`data.ts`, por `build.mjs` desde la base CC0 de Lichess), verificación con Stockfish en Node (`verify.mjs`, `sf-node.mjs`) |
+| `src/openings.ts`, `src/openings/` | Aperturas: lista, ver, repetir, jugar desde la posición y editor de las del padre (`notation.ts` lee notación inglesa/española). `node src/openings/verify.mjs` |
+| `src/medals.ts` | Medallas: casi todas se deducen del progreso; `recordEvent()` para lo que no (enroque, ganar con negras). Se comprueban en cada `persist()` |
+| `src/drag.ts` | Arrastrar piezas en cualquier `.board`: traduce el arrastre a los dos toques de siempre (pieza y casilla), así cada tablero conserva su lógica |
+| `src/themes/` | Dibujantes de piezas de los temas con dibujos (dinos, medieval, bloques, construcción). `Theme.draw`, `lightTex`, `darkTex` |
 | `src/lessons/verify.mjs` | `node src/lessons/verify.mjs`: comprueba que todos los ejercicios tienen solución |
 | `src/pieces.ts` | Piezas en SVG generadas por código; nombres y valores |
 | `src/themes.ts` | Temas (colores del tablero y piezas). Un tema nuevo = una entrada |
@@ -69,7 +74,7 @@ El despliegue es automático: un push a `main` ejecuta `.github/workflows/deploy
 
 No hay tests automáticos. Para comprobar un cambio:
 
-1. `npm run build` (incluye la comprobación de tipos). Si tocas lecciones, también `node src/lessons/verify.mjs`.
+1. `npm run build` (incluye la comprobación de tipos). Si tocas contenido: `node src/lessons/verify.mjs`, `node src/openings/verify.mjs` y `node src/puzzles/verify.mjs`.
 2. Sirve `dist/` con `npm run preview` y contrólalo con Playwright usando el Chrome instalado (`/Applications/Google Chrome.app`) en estos tamaños: 390×844 con toque, 844×390, 768×1024 y 1440×900.
 3. Comprueba:
    - que no hay errores en la consola;
@@ -83,6 +88,8 @@ No hay tests automáticos. Para comprobar un cambio:
 - **Zoom en el móvil:** está desactivado (meta viewport, `touch-action: manipulation` y `gesturestart`). No añadas manejadores de `touchend` con `preventDefault`: se perderían los toques rápidos entre pieza y destino.
 - **Caché de la app:** el service worker sirve primero la red, así que los cambios llegan al recargar. Si cambias la estrategia, sube el nombre de `CACHE`.
 - **QR de la pantalla principal:** apunta a la dirección actual de la página; en `localhost` usa `PUBLIC_URL` (`src/main.ts`). Si cambia la dirección de la web, actualízala ahí.
+- **Colores del tablero:** a1 es oscura y h1 clara: `(columna 0-7 + fila 1-8) % 2 === 0` → clara. Todos los tableros deben coincidir.
+- **Carpeta de trabajo:** no escribas fuera del repositorio. Pruebas, compilaciones y capturas van en `.tmp/` (ignorada por git; Playwright en `.tmp/pw`).
 - **Curso escolar:** cualquier contenido nuevo (retos, aperturas…) debe adaptarse a `progress.course` usando `src/level.ts`.
 - **Tipografía:** Baloo 2 (Google Fonts). Los temas pueden tener `gloss` (brillo de juguete en las piezas).
 - **Emojis compuestos (ZWJ, como 👨‍👦):** no se ven bien en todos los dispositivos. Usa emojis simples.

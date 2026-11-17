@@ -1,0 +1,109 @@
+/* Retos: solo lo específico. El resto (botones, tablero, bocadillo, ventanas y el diseño
+   adaptable de la pantalla) viene de las clases compartidas de style.css. */
+
+/* ═════════════ Mapa de colecciones ═════════════ */
+.puzzles-map { max-width: 860px; display: grid; gap: 14px; }
+.p-total { cursor: default; white-space: nowrap; }
+.puzzles-map > .talk .bubble { font-size: 1.1rem; }
+
+.p-daily { display: flex; align-items: center; gap: 14px; }
+.p-daily .ico { background: #ffe3ee; }
+.p-daily .lbl { flex: 1; }
+.p-daily-stars { font-size: 1.5rem; }
+
+.p-tier { display: grid; gap: 10px; }
+.p-tier h2 { font-size: 1.35rem; margin-top: 4px; }
+.p-tier-note {
+  margin: 0; justify-self: start; font-size: 1rem; font-weight: 700;
+  background: #fff4c2; border: 3px dashed var(--sun); padding: 4px 12px; border-radius: 14px;
+}
+.p-cols {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+.p-col {
+  width: 100%; height: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 10px 14px 10px 10px; border: 3px solid #fff; border-radius: var(--radius, 22px);
+  background: #fff; cursor: pointer;
+  box-shadow: 0 6px 0 var(--edge, #0002), 0 10px 24px rgb(43 35 80 / .1);
+  transition: transform .1s ease-out, box-shadow .1s ease-out;
+}
+.p-col:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge, #0002); }
+.p-col-icon {
+  width: 58px; height: 58px; flex-shrink: 0; border-radius: 18px; display: grid; place-items: center;
+  font-size: 2rem; background: var(--accent-soft, #eee9ff); box-shadow: inset 0 -3px 0 #0000000f;
+}
+.p-col-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.p-col-text strong { font-size: 1.2rem; line-height: 1.1; }
+.p-col-text small { font-size: .95rem; color: var(--ink-soft); font-weight: 600; line-height: 1.15; }
+.p-bar { height: 8px; border-radius: 99px; background: #ece8f6; overflow: hidden; margin-top: 3px; }
+.p-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #7bd389); border-radius: 99px; }
+.p-col-stars { font-weight: 800; font-size: 1.15rem; white-space: nowrap; }
+.p-col-stars small { font-size: .85rem; color: var(--ink-soft); }
+.p-col.locked { background: #f7f6fb; color: var(--ink-soft); box-shadow: 0 4px 0 #e4e1ee; }
+.p-col.locked .p-col-icon { background: #ecebf1; font-size: 1.6rem; }
+.p-tier-locked h2 { color: var(--ink-soft); }
+.p-credit { margin: 4px 0 0; font-size: .85rem; color: var(--ink-soft); text-align: center; }
+
+/* lista de retos de una colección */
+.p-list {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+}
+.p-num {
+  width: 100%; display: grid; justify-items: center; gap: 0; padding: 10px 4px 8px;
+  border: 3px solid #fff; border-radius: var(--radius-sm, 16px); background: #fff; cursor: pointer;
+  box-shadow: 0 5px 0 var(--edge, #0002), 0 8px 18px rgb(43 35 80 / .1);
+  transition: transform .1s ease-out, box-shadow .1s ease-out;
+}
+.p-num:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--edge, #0002); }
+.p-num b { font-size: 1.8rem; line-height: 1.1; }
+.p-num .rival-stars { font-size: 1.15rem; }
+.p-num.done { background: #effbf3; }
+.p-num.p-next { border-color: var(--primary, #ff7f2a); animation: p-glow 1.6s ease-in-out infinite; }
+@keyframes p-glow { 50% { box-shadow: 0 5px 0 var(--primary-dark, #c74706), 0 0 0 6px #ff8a3d44; } }
+
+@media (max-width: 420px) {
+  .p-cols { grid-template-columns: 1fr; gap: 10px; }
+  .p-col-icon { width: 50px; height: 50px; font-size: 1.7rem; }
+  .p-list { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+}
+
+/* ═════════════ Pantalla de reto ═════════════ */
+.p-count { cursor: default; white-space: nowrap; flex-shrink: 0; }
+.p-panel { align-content: start; }
+.p-info {
+  background: var(--card, #fffe); border: 3px solid #fff; border-radius: var(--radius-sm, 16px);
+  padding: 6px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px;
+  font-size: 1.05rem; font-weight: 700;
+}
+.p-side { display: inline-flex; align-items: center; gap: 4px; }
+.p-side .mini { width: 28px; height: 28px; }
+.p-pot { font-size: 1.4rem; }
+.p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.p-actions .btn { font-size: 1.2rem; padding: 14px 8px; }
+#hint.p-nudge { animation: p-nudge 1s ease-in-out infinite; --bg: #fff4c2; --edge-c: var(--sun-dark); }
+@keyframes p-nudge { 50% { transform: scale(1.06); } }
+
+/* error: la casilla tiembla */
+.sq.p-no { animation: p-shake .35s; }
+.sq.p-no::before { content: ''; position: absolute; inset: 0; background: #ff5d7366; }
+@keyframes p-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .p-info { padding: 3px 10px; font-size: .95rem; }
+  .p-side .mini { width: 22px; height: 22px; }
+  .p-pot { font-size: 1.15rem; }
+  .p-actions .btn { padding: 8px; font-size: 1.05rem; }
+}
+
+/* en el mapa, Nino siempre al lado del bocadillo (en pantallas anchas style.css lo pone encima) */
+@media (orientation: landscape) and (min-width: 640px) {
+  .puzzles-map > .talk { flex-direction: row; align-items: center; }
+  .puzzles-map > .talk .mascot { width: 84px; height: 84px; }
+  .puzzles-map > .talk .bubble::before {
+    left: -13px; top: 50%; transform: translateY(-50%);
+    border: 12px solid transparent; border-right-color: #fff; border-left: 0;
+  }
+  .p-cols { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}

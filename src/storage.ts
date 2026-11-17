@@ -16,6 +16,8 @@ export interface Progress {
   puzzles: Record<string, number>; // estrellas por reto (0-3)
   openings: Record<string, number>; // estrellas por apertura (0-3)
   customOpenings: CustomOpening[]; // aperturas que añade el padre (las de la extraescolar)
+  medals: Record<string, string>; // medallas conseguidas: id -> fecha (AAAA-MM-DD)
+  events: Record<string, number>; // contadores de cosas que no se deducen de las estrellas (enroques...)
   course: number; // curso de primaria (1-6): ajusta cuentas, rivales, explicaciones y ayudas
 }
 
@@ -30,6 +32,8 @@ const DEFAULTS: Progress = {
   puzzles: {},
   openings: {},
   customOpenings: [],
+  medals: {},
+  events: {},
   course: 2,
 };
 
@@ -43,12 +47,14 @@ export function load(): Progress {
       p.puzzles ??= {};
       p.openings ??= {};
       p.customOpenings ??= [];
+      p.medals ??= {};
+      p.events ??= {};
       return p;
     }
   } catch {
     /* navegador sin almacenamiento: seguimos con valores por defecto */
   }
-  return { ...DEFAULTS, stars: {}, lessons: {}, puzzles: {}, openings: {}, customOpenings: [] };
+  return { ...DEFAULTS, stars: {}, lessons: {}, puzzles: {}, openings: {}, customOpenings: [], medals: {}, events: {} };
 }
 
 export function save(p: Progress): void {

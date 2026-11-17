@@ -1,0 +1,162 @@
+/* Aperturas: solo lo específico. Botones, tablero, bocadillo, ventanas y el diseño
+   adaptable de la pantalla de práctica vienen de las clases compartidas de style.css. */
+
+/* ═════════════ Lista de aperturas ═════════════ */
+.o-map { max-width: 860px; display: grid; gap: 14px; }
+.o-total { cursor: default; white-space: nowrap; }
+.o-map > .talk .bubble { font-size: 1.1rem; }
+.o-sec { font-size: 1.3rem; display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.o-dot { width: 22px; height: 22px; border-radius: 50%; display: inline-block; border: 3px solid #2b2350; }
+.o-dot.w { background: #fff; }
+.o-dot.b { background: #2b2350; }
+.o-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.o-card {
+  width: 100%; height: 100%;
+  position: relative; display: grid; justify-items: center; align-content: start; gap: 2px;
+  padding: 12px 8px 10px; border: 3px solid #fff; border-radius: var(--radius, 18px);
+  background: #fff; cursor: pointer; text-align: center; color: inherit; font: inherit;
+  box-shadow: 0 6px 0 var(--edge, #0002), 0 10px 24px rgb(43 35 80 / .1);
+  transition: transform .1s ease-out, box-shadow .1s ease-out;
+}
+.o-card:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge, #0002); }
+.o-card:focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+.o-card strong { font-size: 1.15rem; line-height: 1.15; font-weight: 800; }
+.o-card small { font-size: .9rem; color: var(--ink-soft); font-weight: 600; }
+.o-card .o-icon { font-size: 2.4rem; line-height: 1.2; }
+.o-card .o-stars { font-size: 1.4rem; }
+.o-card.o-next { border-color: var(--primary, #ff8a3d); animation: o-glow 1.6s ease-in-out infinite; }
+@keyframes o-glow { 50% { box-shadow: 0 6px 0 var(--primary-dark, #d96a1f), 0 0 0 6px #ff8a3d44; } }
+.o-card.o-add { background: #ffffff8c; border: 3px dashed #c9c3dc; box-shadow: none; align-content: center; }
+@media (max-width: 420px) {
+  .o-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .o-card { padding: 8px 6px 6px; }
+  .o-card .o-icon { font-size: 2rem; }
+  .o-card .o-stars { font-size: 1.2rem; }
+  .o-card strong { font-size: 1.05rem; }
+}
+
+/* ═════════════ Pantalla de práctica ═════════════ */
+.o-play .topbar .o-side { flex-shrink: 0; }
+.o-panel { align-content: start; }
+/* tira de jugadas */
+.o-line {
+  display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start;
+  background: var(--card, #fffe); border: 3px solid #fff; border-radius: var(--radius-sm, 16px);
+  padding: 6px 8px;
+}
+.o-mv {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 30px; height: 32px; justify-content: center;
+  padding: 0 6px; border-radius: 10px; font-weight: 800; font-size: 1rem;
+  background: #f1eef9; color: #b3abcc; box-shadow: inset 0 0 0 2px #e3def2;
+}
+.o-mv b { font-weight: 800; color: var(--ink-soft); margin-right: 1px; }
+.o-mv .mini { width: 24px; height: 24px; }
+.o-mv .o-q { font-size: 1rem; }
+.o-mv.done { color: var(--ink); background: #fff; }
+.o-mv.done.mine { background: #ddf6e8; box-shadow: inset 0 0 0 2px #9fdcbc; }
+.o-mv.done.rival { background: #ffeedd; box-shadow: inset 0 0 0 2px #f8c79c; }
+.o-mv.now { box-shadow: inset 0 0 0 3px var(--primary, #ff7f2a); transform: scale(1.08); }
+
+.o-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.o-actions .btn { font-size: 1.15rem; padding: 14px 8px; text-align: center; }
+.o-actions .o-wide { grid-column: 1 / -1; }
+.o-actions .o-small { padding: 10px 8px; font-size: 1rem; }
+
+/* flechas para enseñar (las jugadas del rival no llevan: solo se deslizan y se resaltan).
+   Verde en la demostración, azul a rayas para la buena tras un fallo. */
+.board { position: relative; }
+.move-arrow {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 5; filter: drop-shadow(0 1px 1px #0003);
+}
+.move-arrow.drawing line { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: o-draw var(--ms) ease-in-out forwards; }
+@keyframes o-draw { to { stroke-dashoffset: 0; } }
+.move-arrow.o-arrow-mine { color: #22a06bcc; }
+.move-arrow.o-arrow-hint { color: #1f9fd0e6; }
+.move-arrow.o-arrow-hint line { stroke-dasharray: .25 .18; animation: o-march 1s linear infinite; }
+@keyframes o-march { to { stroke-dashoffset: -.86; } }
+
+/* jugada equivocada: la casilla tiembla */
+.sq.o-no { animation: o-shake .35s; }
+.sq.o-no::before { content: ''; position: absolute; inset: 0; background: #ff5d7366; }
+@keyframes o-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* elegir rival */
+.overlay:has(.o-rivals) { align-items: safe center; }
+.o-rivals { max-width: 480px; }
+.o-rivals .o-locked { font-size: .95rem; color: var(--ink-soft); }
+.o-rival-list { display: grid; gap: 10px; width: 100%; }
+.o-rivals .rival { padding: 8px 12px 8px 8px; gap: 12px; }
+.o-rivals .rival-emoji { width: 52px; height: 52px; font-size: 1.9rem; }
+.o-rivals .rival-info strong { font-size: 1.15rem; }
+.o-rivals .rival-info small { font-size: .9rem; }
+
+/* móvil en vertical: la tira y los botones, compactos para que no haya scroll */
+@media (orientation: portrait) {
+  .o-play { --board: min(calc(100vw - 32px - 2 * var(--frame)), calc(100dvh - 460px), 720px); }
+}
+@media (orientation: portrait) and (max-width: 520px) {
+  .o-play .o-panel { gap: 8px; }
+  .o-play .bubble { font-size: 1.05rem; padding: 8px 12px; }
+  .o-play .talk .mascot { width: 64px; height: 64px; }
+  .o-mv { height: 28px; font-size: .9rem; padding: 0 4px; min-width: 26px; }
+  .o-mv .mini { width: 20px; height: 20px; }
+  .o-actions .btn { padding: 11px 6px; font-size: 1.05rem; }
+}
+/* móvil en horizontal */
+@media (orientation: landscape) and (max-height: 500px) {
+  .o-play .o-panel { gap: 6px; }
+  .o-line { padding: 4px 6px; gap: 3px; }
+  .o-mv { height: 24px; font-size: .85rem; padding: 0 3px; min-width: 22px; }
+  .o-mv .mini { width: 18px; height: 18px; }
+  .o-actions { gap: 6px; }
+  .o-actions .btn { padding: 7px 6px; font-size: .95rem; }
+  .o-play .topbar .o-side { display: none; }
+  .o-rivals { gap: 6px; }
+  .o-rivals h2 { font-size: 1.3rem; }
+  .o-rivals > p { font-size: 1rem; }
+  .o-rivals .rival { padding: 4px 10px 4px 4px; }
+  .o-rivals .rival-emoji { width: 42px; height: 42px; font-size: 1.5rem; }
+  .o-rivals .rival-info small { display: none; }
+}
+
+/* ═════════════ Editor (para el adulto) ═════════════ */
+.o-editor {
+  --frame: clamp(6px, 1.4vmin, 12px);
+  --board: min(calc(100vw - 32px - 2 * var(--frame)), 440px);
+  max-width: 1100px; display: grid; gap: 12px;
+}
+.o-ed-intro { margin: 0; font-size: 1rem; color: var(--ink-soft); }
+.o-ed-grid { display: grid; gap: 16px; justify-items: center; align-items: start; }
+.o-ed-board { display: grid; gap: 12px; justify-items: center; }
+.o-ed-board .board-wrap { grid-area: auto; } /* style.css le da grid-area: board */
+.o-ed-tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+.o-ed-tools .btn { padding: 10px 14px; font-size: 1.05rem; }
+.o-ed-form { width: 100%; max-width: 560px; }
+.o-field { display: grid; gap: 6px; font-weight: 800; font-size: 1.1rem; }
+.o-field small { font-weight: 600; font-size: .9rem; color: var(--ink-soft); }
+.o-field input, .o-field textarea {
+  font: inherit; font-size: 1.05rem; font-weight: 600; color: inherit; width: 100%;
+  padding: 10px 12px; border-radius: 14px; border: 3px solid #d8d2f0; background: #fff; resize: vertical;
+}
+.o-field input:focus, .o-field textarea:focus { outline: none; border-color: var(--accent, #6a50d8); }
+.o-ed-read { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.o-ed-read .btn { padding: 10px 14px; font-size: 1rem; }
+.o-count { font-weight: 700; color: var(--ink-soft); }
+.o-err { margin: 0; color: #c93a50; font-weight: 700; min-height: 0; }
+.o-err:empty { display: none; }
+.o-ed-save { display: flex; flex-wrap: wrap; gap: 12px; }
+.o-ed-save .btn { font-size: 1.2rem; padding: 14px 22px; }
+.o-ed-save .btn.primary { flex: 1; }
+@media (orientation: landscape) and (min-width: 760px) {
+  .o-editor { --board: min(calc(100dvh - 230px), calc(100vw - 32px - 420px), 560px); }
+  .o-ed-grid { grid-template-columns: auto minmax(320px, 1fr); justify-items: stretch; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .o-editor { --board: min(calc(100dvh - 120px), 340px); }
+  .o-ed-grid { grid-template-columns: auto 1fr; }
+}

@@ -38,3 +38,5 @@ Lecciones guiadas · Retos/puzzles · Aperturas (predefinidas, propias, repetir 
 ## Licencia
 
 GPL-3.0, porque incluye [Stockfish](https://stockfishchess.org/) ([stockfish.js](https://github.com/nmrugg/stockfish.js)), que es GPL-3.0.
+
+Los retos (salvo «¡Sálvala!») proceden de la [base de puzzles de lichess.org](https://database.lichess.org/#puzzles), de dominio público (CC0).
