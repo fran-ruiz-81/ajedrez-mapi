@@ -27,6 +27,10 @@ npm run build    # genera dist/
 
 Cada `push` a `main` publica automáticamente en GitHub Pages (`.github/workflows/deploy.yml`).
 
+## Requisitos y estado
+
+Ver [REQUISITOS.md](REQUISITOS.md): qué está hecho, qué falta y el plan por fases.
+
 ## Próximas fases
 
 Lecciones guiadas · Retos/puzzles · Aperturas (predefinidas, propias, repetir y jugar desde la posición) · Temas dinosaurios, medieval, bloques y piezas de construcción.
