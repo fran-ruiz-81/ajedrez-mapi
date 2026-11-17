@@ -30,6 +30,7 @@ _Última actualización: 17/11/2026_
 | Publicación automática con cada cambio | ✅ | GitHub Actions → https://fran-ruiz-81.github.io/ajedrez-mapi/ |
 | Repositorio público en GitHub Pages | ✅ | Decisión del usuario; licencia GPL-3.0 por Stockfish |
 | Sin zoom accidental en el móvil | ✅ | Corregido tras probarlo jugando |
+| Código QR en la pantalla principal para abrirlo en el móvil | ✅ | Solo en ordenador; en móvil/tablet salen instrucciones para instalarlo (iPhone o Android). Se oculta si ya está instalado |
 
 ## 3. Modos de juego
 
@@ -136,3 +137,4 @@ El orden de las fases 2–4 se puede cambiar según lo que estén dando en la ex
 ## Registro de cambios
 
 - **17/11/2026** — Fase 1 publicada. Mascota renombrada a Nino y juego personalizado para LRM. Corregido el zoom accidental en el móvil.
+- **17/11/2026** — QR en la pantalla principal para abrir el juego en el móvil e instrucciones para instalarlo como app.

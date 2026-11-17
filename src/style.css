@@ -88,6 +88,21 @@ h1, h2 { margin: 0; line-height: 1.15; }
 .toggle { font-weight: 700; font-size: 1.1rem; display: flex; gap: 8px; align-items: center; }
 .toggle input { width: 22px; height: 22px; }
 
+/* ───────── Instalar en el móvil ───────── */
+.install { background: var(--card); border-radius: var(--radius); padding: 16px; }
+.install h2 { font-size: 1.2rem; margin-bottom: 4px; }
+.install p { margin: 4px 0 0; font-size: 1.05rem; }
+.install .hint-small { font-size: .9rem; opacity: .75; }
+.install-qr { display: flex; gap: 16px; align-items: center; }
+.qr { width: 150px; height: 150px; flex-shrink: 0; background: #fff; border-radius: 12px; padding: 6px; }
+.qr svg { width: 100%; height: 100%; display: block; }
+/* QR solo en ordenador (ratón); en móvil/tablet, instrucciones para instalar */
+.install-tip { display: none; }
+@media (pointer: coarse) {
+  .install-qr { display: none; }
+  .install-tip { display: block; }
+}
+
 /* ───────── Mascota ───────── */
 .mascot { width: 72px; height: 72px; flex-shrink: 0; }
 .mascot.big { width: 120px; height: 120px; }

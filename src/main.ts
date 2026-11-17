@@ -9,6 +9,7 @@ import { RIVALS, type Rival } from './rivals';
 import { bestMove, preloadStockfish } from './stockfish';
 import { describeOpponentMove, explainMove, piecesInDanger, warnAfterMove } from './teach';
 import type { ScoredMove } from './engine';
+import qrcode from 'qrcode-generator';
 
 const app = document.getElementById('app')!;
 const progress: Progress = load();
@@ -92,6 +93,7 @@ function showHome() {
         <button class="btn big soon" disabled>🧩 Retos <small>¡pronto!</small></button>
         <button class="btn big soon" disabled>🚀 Aperturas <small>¡pronto!</small></button>
       </div>
+      ${installSection()}
       <section class="settings">
         <h2>Tablero</h2>
         <div class="chips">
@@ -123,6 +125,51 @@ function showHome() {
     setSoundEnabled(progress.sound);
     persist();
   });
+}
+
+const PUBLIC_URL = 'https://fran-ruiz-81.github.io/ajedrez-mapi/';
+
+/** Dirección del juego para el QR. En local (localhost) usa la web publicada. */
+function gameUrl(): string {
+  const { hostname, origin, pathname } = location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return PUBLIC_URL;
+  return origin + pathname.replace(/index\.html$/, '');
+}
+
+function isInstalled(): boolean {
+  return (
+    matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+/** Ordenador: QR para abrirlo en el móvil. Móvil/tablet: cómo instalarlo como app. */
+function installSection(): string {
+  if (isInstalled()) return '';
+  const qr = qrcode(0, 'M');
+  qr.addData(gameUrl());
+  qr.make();
+  const svg = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return `
+    <section class="install">
+      <div class="install-qr">
+        <div class="qr" role="img" aria-label="Código QR para abrir el juego en el móvil">${svg}</div>
+        <div>
+          <h2>📱 Juega en el móvil</h2>
+          <p>Apunta con la cámara del móvil a este código y se abrirá el juego.</p>
+          <p class="hint-small">Después, añádelo a la pantalla de inicio para tenerlo como una app.</p>
+        </div>
+      </div>
+      <div class="install-tip">
+        <h2>📲 Ponlo como app</h2>
+        <p>${
+          ios
+            ? 'Pulsa el botón <strong>Compartir</strong> <span aria-hidden="true">⬆️</span> y elige <strong>«Añadir a pantalla de inicio»</strong>.'
+            : 'Abre el menú del navegador <strong>⋮</strong> y elige <strong>«Instalar app»</strong> o <strong>«Añadir a pantalla de inicio»</strong>.'
+        }</p>
+      </div>
+    </section>`;
 }
 
 function showRivals() {

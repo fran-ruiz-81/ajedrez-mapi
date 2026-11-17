@@ -77,4 +77,5 @@ No hay tests automáticos. Para comprobar un cambio:
 
 - **Zoom en el móvil:** está desactivado (meta viewport, `touch-action: manipulation` y `gesturestart`). No añadas manejadores de `touchend` con `preventDefault`: se perderían los toques rápidos entre pieza y destino.
 - **Caché de la app:** el service worker sirve primero la red, así que los cambios llegan al recargar. Si cambias la estrategia, sube el nombre de `CACHE`.
+- **QR de la pantalla principal:** apunta a la dirección actual de la página; en `localhost` usa `PUBLIC_URL` (`src/main.ts`). Si cambia la dirección de la web, actualízala ahí.
 - **Emojis compuestos (ZWJ, como 👨‍👦):** no se ven bien en todos los dispositivos. Usa emojis simples.
