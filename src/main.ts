@@ -378,30 +378,6 @@ export function startGame(opts: GameOpts) {
   const PLAYER_MS = reduceMotion ? 0 : 220;
   const replayBtn = () => app.querySelector<HTMLElement>('#replay')!;
 
-  /** Columna/fila en pantalla (0-7) de una casilla, según la orientación del tablero. */
-  function screenPos(sq: string): [number, number] {
-    const file = sq.charCodeAt(0) - 97;
-    const rank = Number(sq[1]);
-    return orientation === 'w' ? [file, 8 - rank] : [7 - file, rank - 1];
-  }
-
-  /** Flecha de la última jugada (del rival, o de cualquiera en el modo dos personas). */
-  function arrowSvg(from: string, to: string, ms: number): string {
-    const [x1, y1] = screenPos(from).map((v) => v + 0.5);
-    const [x2, y2] = screenPos(to).map((v) => v + 0.5);
-    const len = Math.hypot(x2 - x1, y2 - y1);
-    // acortar para que la punta no tape la pieza de destino
-    const k = (len - 0.32) / len;
-    const ex = x1 + (x2 - x1) * k;
-    const ey = y1 + (y2 - y1) * k;
-    const draw = ms ? `style="--len:${len.toFixed(3)};--ms:${ms}ms"` : '';
-    return `<svg class="move-arrow ${ms ? 'drawing' : ''}" viewBox="0 0 8 8" aria-hidden="true" ${draw}>
-      <defs><marker id="arrow-head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse">
-        <path d="M0 0 L10 5 L0 10 Z" fill="currentColor"/></marker></defs>
-      <line x1="${x1}" y1="${y1}" x2="${ex.toFixed(3)}" y2="${ey.toFixed(3)}" stroke="currentColor" stroke-width=".16"
-        stroke-linecap="round" marker-end="url(#arrow-head)" pathLength="${len.toFixed(3)}"/></svg>`;
-  }
-
   /** Desliza una pieza ya dibujada en `to` desde la casilla `from`. */
   function slide(from: string, to: string, ms: number) {
     const fromEl = boardEl.querySelector<HTMLElement>(`[data-sq="${from}"]`);
@@ -490,9 +466,6 @@ export function startGame(opts: GameOpts) {
         }</button>`;
       }
     }
-    // flecha de la última jugada: en modo ordenador, solo la de la máquina
-    const showArrow = last && (!isCpu || last.color !== playerColor);
-    if (showArrow) html += arrowSvg(last.from, last.to, anim ? anim.ms : 0);
     boardEl.innerHTML = html;
     if (anim) animateMove(anim.move, anim.ms);
 
