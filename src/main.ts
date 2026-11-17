@@ -553,6 +553,10 @@ function confetti() {
   setTimeout(() => box.remove(), 4000);
 }
 
+// Evitar zoom accidental con pellizco en Safari (ignora user-scalable=no).
+// El zoom por doble toque lo evita `touch-action: manipulation` en el CSS.
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+
 showHome();
 
 // Instalable y sin conexión (PWA)
