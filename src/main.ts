@@ -6,10 +6,9 @@ import { load, save, type Progress } from './storage';
 import { sfx, setSoundEnabled } from './sound';
 import { mascotSvg, MASCOT_NAME, PLAYER_NAME, type Mood } from './mascot';
 import { RIVALS, type Rival } from './rivals';
-import { bestMove, preloadStockfish } from './stockfish';
+import { bestMove, isStockfishReady, preloadStockfish } from './stockfish';
 import { describeOpponentMove, explainMove, piecesInDanger, warnAfterMove } from './teach';
 import type { ScoredMove } from './engine';
-import qrcode from 'qrcode-generator';
 import { showLessons } from './lessons';
 import { showPuzzles } from './puzzles';
 import { showOpenings } from './openings';
@@ -65,19 +64,32 @@ const parseUci = (u: string) => ({
   promotion: u.length > 4 ? u[4] : undefined,
 });
 
+/** Motor propio sin despistes: el que juega si Stockfish no está (rápido también en el móvil). */
+const FALLBACK = { depth: 1, noise: 0, blunder: 0, qDepth: 2 };
+
+/**
+ * Pide la jugada a Stockfish, pero sin hacer esperar al niño mientras se descarga:
+ * si aún no está listo y tarda más de 2,5 s, esa jugada la hace el motor propio.
+ */
+async function stockfishOr(fen: string, opts: { skill: number; depth: number }): Promise<string | null> {
+  const sf = bestMove(fen, opts);
+  if (isStockfishReady()) return sf;
+  const r = await Promise.race([sf, wait(2500).then(() => 'late' as const)]);
+  return r === 'late' ? null : r;
+}
+
 async function computerMove(fen: string, rival: Rival) {
   const e = adjustRival(rival.engine, progress.course);
   if (e.kind === 'sf') {
-    const uci = await bestMove(fen, { skill: e.skill, depth: e.depth });
+    const uci = await stockfishOr(fen, { skill: e.skill, depth: e.depth });
     if (uci) return parseUci(uci);
-    // Stockfish no disponible: usamos el motor propio al máximo
-    return askOwn({ kind: 'pick', fen, level: { depth: 2, noise: 0, blunder: 0, qDepth: 1 } });
+    return askOwn({ kind: 'pick', fen, level: FALLBACK });
   }
   return askOwn({ kind: 'pick', fen, level: e.level });
 }
 
 async function hintMove(fen: string) {
-  const uci = await bestMove(fen, { skill: 20, depth: 10 });
+  const uci = await stockfishOr(fen, { skill: 20, depth: 10 });
   if (uci) return parseUci(uci);
   return askOwn({ kind: 'hint', fen });
 }
@@ -168,6 +180,18 @@ function showHome() {
     }),
   );
   app.querySelector('#reset')!.addEventListener('click', askReset);
+  void drawQr();
+}
+
+/** El QR solo se ve en el ordenador: su librería se carga solo ahí y después de pintar. */
+async function drawQr() {
+  const box = app.querySelector<HTMLElement>('#qr');
+  if (!box || matchMedia('(pointer: coarse)').matches) return;
+  const { default: qrcode } = await import('qrcode-generator');
+  const qr = qrcode(0, 'M');
+  qr.addData(gameUrl());
+  qr.make();
+  box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
 }
 
 /** Borrar estrellas: hay que resolver 3 cuentas de su curso, para que no pase sin querer. */
@@ -212,15 +236,11 @@ function isInstalled(): boolean {
 /** Ordenador: QR para abrirlo en el móvil. Móvil/tablet: cómo instalarlo como app. */
 function installSection(): string {
   if (isInstalled()) return '';
-  const qr = qrcode(0, 'M');
-  qr.addData(gameUrl());
-  qr.make();
-  const svg = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   return `
     <section class="install">
       <div class="install-qr">
-        <div class="qr" role="img" aria-label="Código QR para abrir el juego en el móvil">${svg}</div>
+        <div class="qr" id="qr" role="img" aria-label="Código QR para abrir el juego en el móvil"></div>
         <div>
           <h2>📱 Juega en el móvil</h2>
           <p>Apunta con la cámara del móvil a este código y se abrirá el juego.</p>
@@ -511,6 +531,8 @@ export function startGame(opts: GameOpts) {
     render({ move, ms: justDropped() ? 0 : PLAYER_MS }); // si la ha arrastrado, ya está en su sitio
     soundFor(move);
     const token = gameToken;
+    // el ordenador empieza a pensar ya, mientras se anima la jugada del niño
+    const early = isCpu && !chess.isGameOver() ? computerMove(chess.fen(), rival!) : undefined;
     await wait(PLAYER_MS);
     if (token !== gameToken) return; // ha deshecho o salido durante la animación
     if (checkEnd()) return;
@@ -522,22 +544,24 @@ export function startGame(opts: GameOpts) {
     else if (warning) say(isCpu ? `Ahora piensa ${rival!.name}…` : `Ahora mueven las ${colorName(chess.turn())}.`, 'think');
     else say(praise(), 'happy');
 
-    if (isCpu) await cpuTurn();
+    if (isCpu) await cpuTurn(early);
   }
 
-  async function cpuTurn() {
+  /** Turno del ordenador. `early`: su jugada, si ya se empezó a calcular antes. */
+  async function cpuTurn(early?: ReturnType<typeof computerMove>) {
     const token = ++gameToken;
     thinking = true;
     render();
     const fen = chess.fen();
-    const [m] = await Promise.all([computerMove(fen, rival!), wait(700)]);
+    // un pequeño "Pensando…" para que se note que es su turno
+    const [m] = await Promise.all([early ?? computerMove(fen, rival!), wait(400)]);
     if (token !== gameToken || over) return;
     let move: Move;
     try {
       move = chess.move({ from: m.from, to: m.to, promotion: m.promotion ?? 'q' });
     } catch {
       // respuesta rara del motor: que juegue el motor propio para no quedarse atascados
-      const own = await askOwn({ kind: 'pick', fen, level: { depth: 1, noise: 0, blunder: 0, qDepth: 1 } });
+      const own = await askOwn({ kind: 'pick', fen, level: FALLBACK });
       if (token !== gameToken || over) return;
       move = chess.move({ from: own.from, to: own.to, promotion: own.promotion ?? 'q' });
     }
@@ -725,6 +749,13 @@ function sanOf(fen: string, m: { from: string; to: string; promotion?: string })
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 enableDrag();
+
+// Descargar Stockfish en segundo plano en cuanto el navegador esté libre (salvo ahorro de datos):
+// así la primera jugada de Oso/Búho o la primera pista no esperan a la descarga.
+if (!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) {
+  const idle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1500));
+  idle(() => preloadStockfish());
+}
 
 // Accesibilidad: al abrirse cualquier ventana (fin de partida, coronación, ejercicio
 // superado…) el foco pasa a ella, para no quedarse en el tablero de detrás.

@@ -29,11 +29,17 @@ function waitFor(pred: (line: string) => boolean, timeoutMs: number): Promise<st
 
 /** Descarta el motor (colgado o caído); la próxima petición lo vuelve a arrancar. */
 function reset() {
+  loaded = false;
   worker?.terminate();
   worker = null;
   ready = null;
   listener = null;
 }
+
+let loaded = false;
+
+/** true cuando Stockfish ya está descargado y responde. */
+export const isStockfishReady = () => loaded;
 
 function init(): Promise<boolean> {
   if (ready) return ready;
@@ -45,14 +51,15 @@ function init(): Promise<boolean> {
         listener?.('__error__');
         reset();
       };
-      const ok = waitFor((l) => l === 'uciok' || l === '__error__', 15000);
+      // 60 s: incluye descargar ~1,2 MB; con mala cobertura puede tardar (mientras, juega el motor propio)
+      const ok = waitFor((l) => l === 'uciok' || l === '__error__', 60000);
       send('uci');
       const line = await ok;
       if (line !== 'uciok') throw new Error('stockfish no responde');
+      loaded = true;
       return true;
     } catch {
-      worker?.terminate();
-      worker = null;
+      reset(); // que se pueda reintentar más tarde en lugar de perderlo para toda la sesión
       return false;
     }
   })();

@@ -67,8 +67,11 @@ El despliegue es automático: un push a `main` ejecuta `.github/workflows/deploy
 | `src/themes.ts` | Temas (colores del tablero y piezas). Un tema nuevo = una entrada |
 | `src/mascot.ts` | SVG de Nino con expresiones; `MASCOT_NAME` y `PLAYER_NAME` |
 | `src/sound.ts` | Efectos sintetizados con Web Audio |
-| `src/storage.ts` | Progreso en `localStorage` (estrellas, tema, sonido, ayudas) |
-| `public/sw.js` | Service worker: primero la red y, sin conexión, lo guardado |
+| `src/storage.ts` | Progreso en `localStorage` (tema, sonido, ayudas, curso, estrellas de cada sección, aperturas del padre, medallas). `load()` valida lo guardado |
+| `src/ui.ts` | Utilidades compartidas: `esc`, `cap`, `starsHtml`, `colorName`, `confetti` |
+| `src/animate.ts` | Animación de jugadas (deslizar y desvanecer la pieza comida), para todos los tableros |
+| `src/mathgate.ts` | «Puerta de cuentas» del curso antes de acciones irreversibles (borrar progreso, editor de aperturas) |
+| `scripts/sw.template.js` + `vite.config.ts` | Service worker GENERADO en cada build con la lista de archivos: guarda la app al instalarse (funciona sin conexión desde la 1ª visita), caché primero para `/assets/`, Stockfish y fuentes |
 
 ## Cómo probar
 
@@ -86,10 +89,12 @@ No hay tests automáticos. Para comprobar un cambio:
 ## Cuidado con
 
 - **Zoom en el móvil:** está desactivado (meta viewport, `touch-action: manipulation` y `gesturestart`). No añadas manejadores de `touchend` con `preventDefault`: se perderían los toques rápidos entre pieza y destino.
-- **Caché de la app:** el service worker sirve primero la red, así que los cambios llegan al recargar. Si cambias la estrategia, sube el nombre de `CACHE`.
+- **Caché de la app:** `sw.js` se genera al compilar (no lo pongas en `public/`). La página se pide a la red con 2,5 s de margen; los archivos con hash, de la caché. Stockfish y las fuentes van en `ajedrez-static-v1`, que no se borra al publicar; si cambian, sube ese nombre. Al buscar en caché usa `ignoreVary`.
+- **Stockfish no bloquea:** se precarga en segundo plano al abrir la app; mientras no está, cada jugada espera como mucho 2,5 s y si no, juega el motor propio (`stockfishOr` en `main.ts`).
+- **Arrastrar:** cada tablero pone en `data-drag` el color que el niño puede mover ahora (o vacío). Las piezas llevan `data-piece-color`; no uses `data-color` para piezas (lo usan los botones de color).
 - **QR de la pantalla principal:** apunta a la dirección actual de la página; en `localhost` usa `PUBLIC_URL` (`src/main.ts`). Si cambia la dirección de la web, actualízala ahí.
 - **Colores del tablero:** a1 es oscura y h1 clara: `(columna 0-7 + fila 1-8) % 2 === 0` → clara. Todos los tableros deben coincidir.
 - **Carpeta de trabajo:** no escribas fuera del repositorio. Pruebas, compilaciones y capturas van en `.tmp/` (ignorada por git; Playwright en `.tmp/pw`).
 - **Curso escolar:** cualquier contenido nuevo (retos, aperturas…) debe adaptarse a `progress.course` usando `src/level.ts`.
-- **Tipografía:** Baloo 2 (Google Fonts). Los temas pueden tener `gloss` (brillo de juguete en las piezas).
+- **Tipografía:** Baloo 2, servida desde `public/fonts/` (licencia OFL), declarada en `index.html`. Los temas pueden tener `gloss` (brillo de juguete en las piezas).
 - **Emojis compuestos (ZWJ, como 👨‍👦):** no se ven bien en todos los dispositivos. Usa emojis simples.

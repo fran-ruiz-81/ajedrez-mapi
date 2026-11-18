@@ -11,6 +11,6 @@ self.onmessage = (e: MessageEvent<Req>) => {
     self.postMessage({ id: r.id, move: pickMove(r.fen, r.level) });
   } else {
     // pista de emergencia si Stockfish no está disponible
-    self.postMessage({ id: r.id, move: scoreMoves(r.fen, 2, 1)[0] });
+    self.postMessage({ id: r.id, move: scoreMoves(r.fen, 1, 2)[0] }); // profundidad 1: rápida en el móvil
   }
 };
