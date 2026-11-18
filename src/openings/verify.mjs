@@ -23,7 +23,8 @@ for (const op of OPENINGS) {
   ids.add(op.id);
   if (op.why.length !== op.moves.length) fail(`hay ${op.why.length} explicaciones para ${op.moves.length} jugadas`);
   if (short < 6 || short > 8) fail('la línea corta debe tener 6-8 jugadas');
-  if (long < 10 || long > 12) fail('la línea larga debe tener 10-12 jugadas');
+  // una línea que acaba en mate (Mate del Pastor) puede ser más corta
+  if (!op.moves.at(-1).endsWith('#') && (long < 10 || long > 12)) fail('la línea larga debe tener 10-12 jugadas');
   const mine = (n) => op.moves.slice(0, n).filter((_, i) => (i % 2 === 0) === (op.color === 'w')).length;
   if (mine(short) < 3 || mine(short) > 4) fail(`en la corta el niño hace ${mine(short)} jugadas (debe ser 3-4)`);
   const chess = new Chess();

@@ -28,6 +28,8 @@ export const COLLECTIONS: CollectionInfo[] = [
   { id: 'material2', title: 'Gana en 2', emoji: '💰', course: 3, goal: 'material', kidMoves: 2, blurb: 'Gana material en 2 jugadas' },
   { id: 'mate3', title: 'Mate en 3', emoji: '🦁', course: 5, goal: 'mate', kidMoves: 3, blurb: 'Para cazadores de reyes' },
   { id: 'combo', title: 'Combinaciones', emoji: '🧠', course: 5, goal: 'combo', kidMoves: 3, blurb: 'Jugadas largas de campeón' },
+  // Al final para que build.mjs genere igual las anteriores (mismos ids, no se pierden estrellas)
+  { id: 'pasillo', title: 'Mate del pasillo', emoji: '🚪', course: 1, goal: 'mate', kidMoves: 1, blurb: 'El rey encerrado por sus peones' },
 ];
 
 /** Grupos de cursos: así se muestran en el mapa. */

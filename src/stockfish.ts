@@ -27,13 +27,24 @@ function waitFor(pred: (line: string) => boolean, timeoutMs: number): Promise<st
   });
 }
 
+/** Descarta el motor (colgado o caído); la próxima petición lo vuelve a arrancar. */
+function reset() {
+  worker?.terminate();
+  worker = null;
+  ready = null;
+  listener = null;
+}
+
 function init(): Promise<boolean> {
   if (ready) return ready;
   ready = (async () => {
     try {
       worker = new Worker(`${import.meta.env.BASE_URL}stockfish/stockfish-19-lite-single.js`);
       worker.onmessage = (e: MessageEvent) => listener?.(String(e.data));
-      worker.onerror = () => listener?.('__error__');
+      worker.onerror = () => {
+        listener?.('__error__');
+        reset();
+      };
       const ok = waitFor((l) => l === 'uciok' || l === '__error__', 15000);
       send('uci');
       const line = await ok;
@@ -66,11 +77,22 @@ export function bestMove(fen: string, opts: SfOptions): Promise<string | null> {
     send('ucinewgame');
     const isReady = waitFor((l) => l === 'readyok', 5000);
     send('isready');
-    await isReady;
+    if (!(await isReady)) {
+      reset();
+      return null;
+    }
     const done = waitFor((l) => l.startsWith('bestmove'), 20000);
     send(`position fen ${fen}`);
     send(`go depth ${opts.depth}`);
-    const line = await done;
+    let line = await done;
+    if (!line) {
+      // tarda demasiado (p. ej. el móvil suspendió la app): pararlo para que su
+      // respuesta no llegue tarde y se confunda con la de otra posición
+      const stopped = waitFor((l) => l.startsWith('bestmove'), 1500);
+      send('stop');
+      line = await stopped;
+      if (!line) reset();
+    }
     const m = line?.split(' ')[1];
     return m && m !== '(none)' ? m : null;
   });

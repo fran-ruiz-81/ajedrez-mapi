@@ -20,6 +20,7 @@ import {
   type FreeBoard,
   type FreePiece,
 } from './lessons/engine';
+import { cap, confetti, starsHtml } from './ui';
 
 export interface LessonsContext {
   app: HTMLElement;
@@ -29,9 +30,7 @@ export interface LessonsContext {
   goHome: () => void;
 }
 
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const art = (t: PieceSymbol) => (t === 'r' || t === 'q' ? 'la ' : 'el ') + PIECE_NAMES[t];
-const starsHtml = (n: number) => '<i class="on">★</i>'.repeat(n) + '<i>★</i>'.repeat(3 - n);
 
 /** Cómo se mueve cada pieza, para explicarlo cuando se equivoca. */
 const HOW: Record<PieceSymbol, string> = {
@@ -136,7 +135,7 @@ export function showLessons(ctx: LessonsContext) {
         <aside class="panel l-panel">
           <div class="talk">
             <div class="mascot" id="mascot"></div>
-            <p class="bubble" id="bubble"></p>
+            <p class="bubble" id="bubble" aria-live="polite"></p>
           </div>
           <div class="l-info" id="info"></div>
           <div class="l-actions" id="actions"></div>
@@ -151,7 +150,13 @@ export function showLessons(ctx: LessonsContext) {
     const actionsEl = app.querySelector<HTMLElement>('#actions')!;
     const overlay = app.querySelector<HTMLElement>('#overlay')!;
     const ex = () => lesson.exercises[exIndex];
-    const later = (ms: number, fn: () => void) => setTimeout(() => token === screenToken && fn(), ms);
+    // `phase` cambia al reiniciar o cambiar de modo: así un temporizador viejo
+    // (la respuesta del rival, deshacer un fallo...) no actúa sobre el tablero nuevo
+    let phase = 0;
+    const later = (ms: number, fn: () => void) => {
+      const ph = phase;
+      return setTimeout(() => token === screenToken && ph === phase && fn(), ms);
+    };
 
     function say(text: string, mood: Mood = 'happy') {
       bubble.textContent = text;
@@ -252,6 +257,7 @@ export function showLessons(ctx: LessonsContext) {
 
     // ───────── Introducción con demostración ─────────
     function showIntro() {
+      phase++;
       exIndex = -1;
       selected = null;
       last = null;
@@ -302,6 +308,7 @@ export function showLessons(ctx: LessonsContext) {
 
     // ───────── Ejercicios ─────────
     function startExercise(i: number) {
+      phase++;
       exIndex = i;
       used = 0;
       selected = null;
@@ -326,6 +333,7 @@ export function showLessons(ctx: LessonsContext) {
     }
 
     function render() {
+      boardEl.dataset.drag = busy ? '' : 'w'; // en las lecciones el niño juega con blancas
       if (exIndex < 0) return renderIntro();
       const e = ex();
       if (e.kind === 'free') {
@@ -530,13 +538,24 @@ export function showLessons(ctx: LessonsContext) {
         why = 'Eso no ataca al rey negro. ¡Prueba otra vez!';
       } else if (e.goal === 'mate') {
         ok = c.isCheckmate();
-        why = c.inCheck() ? '¡Es jaque, pero el rey puede escapar! Busca el mate.' : 'Eso no es jaque. ¡El mate siempre es un jaque!';
+        why = c.isStalemate()
+          ? '¡Uy, rey ahogado! No está en jaque y no se puede mover: eso es empate. ¡Busca el mate!'
+          : c.inCheck()
+            ? '¡Es jaque, pero el rey puede escapar! Busca el mate.'
+            : 'Eso no es jaque. ¡El mate siempre es un jaque!';
       } else if (e.goal === 'castle') {
         ok = move.isKingsideCastle() || move.isQueensideCastle();
         why = 'Eso no es un enroque. Toca el rey y luego la casilla a dos pasos de él.';
       } else {
-        ok = e.how === 'capture' ? !!move.captured : e.how === 'move' ? move.piece === 'k' : true;
-        why = e.how === 'capture' ? 'Así también te salvas, pero intenta comerte la pieza que ataca.' : '¡Bien salvado! Pero esta vez mueve el rey.';
+        ok =
+          e.how === 'capture' ? !!move.captured
+          : e.how === 'move' ? move.piece === 'k'
+          : e.how === 'block' ? move.piece !== 'k' && !move.captured
+          : true;
+        why =
+          e.how === 'capture' ? 'Así también te salvas, pero intenta comerte la pieza que ataca.'
+          : e.how === 'block' ? '¡Bien salvado! Pero esta vez tapa el jaque con otra pieza.'
+          : '¡Bien salvado! Pero esta vez mueve el rey.';
       }
       if (ok) {
         const msg =
@@ -658,18 +677,3 @@ function bestCaptureValue(b: FreeBoard, safe: boolean): number {
   return best;
 }
 
-function confetti() {
-  const box = document.createElement('div');
-  box.className = 'confetti';
-  const colors = ['#ff5d73', '#ffcf3f', '#4cc9f0', '#7bd389', '#b28dff'];
-  for (let i = 0; i < 80; i++) {
-    const s = document.createElement('i');
-    s.style.left = `${Math.random() * 100}%`;
-    s.style.background = colors[i % colors.length];
-    s.style.animationDelay = `${Math.random() * 0.8}s`;
-    s.style.animationDuration = `${2 + Math.random() * 1.5}s`;
-    box.appendChild(s);
-  }
-  document.body.appendChild(box);
-  setTimeout(() => box.remove(), 4000);
-}

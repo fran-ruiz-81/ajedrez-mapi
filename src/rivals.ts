@@ -39,13 +39,13 @@ export const RIVALS: Rival[] = [
     name: 'Oso Bruno',
     emoji: '🐻',
     desc: 'Fuerte y tranquilo. Piensa antes de mover.',
-    engine: { kind: 'sf', skill: 0, depth: 3 },
+    engine: { kind: 'sf', skill: 1, depth: 4 },
   },
   {
     id: 'buho',
     name: 'Búho Sabio',
     emoji: '🦉',
     desc: 'El más sabio del bosque. ¡El gran reto!',
-    engine: { kind: 'sf', skill: 4, depth: 8 },
+    engine: { kind: 'sf', skill: 2, depth: 6 },
   },
 ];

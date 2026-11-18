@@ -1,6 +1,7 @@
 // Fase 4: Aperturas ("saques" de la extraescolar).
 // Lista de aperturas, pantalla de práctica (ver, repetir y jugar desde la posición)
 // y editor de las aperturas que añade el padre. Contenido en `openings/data.ts`.
+import { mathGate } from './mathgate';
 import './openings.css';
 import { Chess, type Move, type Square } from 'chess.js';
 import type { CustomOpening, Progress } from './storage';
@@ -14,6 +15,7 @@ import { showNotation } from './level';
 import { OPENINGS, lineLength } from './openings/data';
 import { describeMove, fenAfter, formatLine, parseMoves, toEs } from './openings/notation';
 import { drawBoard, type BoardView } from './openings/board';
+import { cap, colorName, confetti, esc, starsHtml } from './ui';
 
 export interface SectionContext {
   app: HTMLElement;
@@ -38,10 +40,6 @@ interface Entry {
   custom?: CustomOpening;
 }
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const starsHtml = (n: number) => '<i class="on">★</i>'.repeat(n) + '<i>★</i>'.repeat(3 - n);
-const colorName = (c: 'w' | 'b') => (c === 'w' ? 'blancas' : 'negras');
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 /** Las jugadas del rival se deslizan despacio para que se vea qué ha movido. */
 const RIVAL_MS = () => (reduceMotion() ? 0 : 800);
@@ -54,7 +52,7 @@ export const practiceStars = (mistakes: number) => (mistakes === 0 ? 3 : mistake
 let screenToken = 0;
 
 function entriesFor(progress: Progress): Entry[] {
-  const pre: Entry[] = OPENINGS.map((o) => {
+  const pre: Entry[] = OPENINGS.filter((o) => progress.course >= (o.minCourse ?? 1)).map((o) => {
     const n = lineLength(o, progress.course);
     return {
       id: o.id,
@@ -140,7 +138,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
       screenToken++;
       ctx.goHome();
     });
-    app.querySelector('#add')!.addEventListener('click', () => showEditor());
+    app.querySelector('#add')!.addEventListener('click', () => openEditor());
     app.querySelectorAll<HTMLElement>('[data-open]').forEach((b) =>
       b.addEventListener('click', () => {
         const e = findEntry(b.dataset.open!);
@@ -152,7 +150,13 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
   // ───────────────────────────── Pantalla de una apertura ─────────────────────────────
   function showOpening(entry: Entry, start: 'menu' | 'watch' | 'practice' = 'menu') {
     const token = ++screenToken;
-    const later = (ms: number, fn: () => void) => setTimeout(() => token === screenToken && fn(), ms);
+    // `phase` cambia al reiniciar o cambiar de modo: así un temporizador viejo
+    // (la respuesta del rival, deshacer un fallo...) no actúa sobre el tablero nuevo
+    let phase = 0;
+    const later = (ms: number, fn: () => void) => {
+      const ph = phase;
+      return setTimeout(() => token === screenToken && ph === phase && fn(), ms);
+    };
     const n = entry.moves.length;
     const isMine = (i: number) => (i % 2 === 0) === (entry.color === 'w');
     let chess = new Chess();
@@ -199,6 +203,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
     const ply = () => chess.history().length;
 
     function render(anim?: { move: Move; ms: number }) {
+      boardEl.dataset.drag = mode === 'practice' && !busy ? entry.color : '';
       drawBoard(boardEl, chess, theme, view, anim);
       renderLine();
     }
@@ -232,6 +237,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
 
     // ───────── Menú de la apertura ─────────
     function showMenu() {
+      phase++;
       mode = 'menu';
       busy = false;
       overlay.classList.add('hidden');
@@ -251,6 +257,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
 
     // ───────── Ver la apertura paso a paso ─────────
     function startWatch() {
+      phase++;
       mode = 'watch';
       chess = new Chess();
       view = { orientation: entry.color };
@@ -324,6 +331,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
 
     // ───────── Repetir: el rival mueve solo y el niño acierta las suyas ─────────
     function startPractice() {
+      phase++;
       mode = 'practice';
       overlay.classList.add('hidden');
       chess = new Chess();
@@ -419,7 +427,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
       say(`${praise} ${label(i)}${entry.why[i]}`, 'happy');
       busy = true;
       if (ply() >= n) return later(ms + 600, finishPractice);
-      later(ms + 1300, rivalMove);
+      later(ms + 700, rivalMove);
     }
 
     function finishPractice() {
@@ -456,6 +464,11 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
 
     // ───────── Jugar contra el ordenador desde la posición ─────────
     function pickRival() {
+      // Si la apertura acaba en mate (p. ej. el Mate del Pastor) no hay partida que seguir
+      if (new Chess(fenAfter(entry.moves)).isGameOver()) {
+        say('¡Esta apertura termina en jaque mate! No se puede seguir jugando. Prueba a repetirla. 😉', 'happy');
+        return;
+      }
       const rivals = ctx.rivals;
       const open = (i: number) => i === 0 || (progress.stars[rivals[i - 1].id] ?? 0) > 0;
       overlay.innerHTML = `
@@ -503,13 +516,18 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
     // ───────── Eventos ─────────
     boardEl.addEventListener('click', (ev) => {
       const btn = (ev.target as HTMLElement).closest<HTMLElement>('[data-sq]');
-      if (!btn || busy) return;
+      if (!btn) return;
+      if (busy) {
+        // no ignorar el toque en silencio: que sepa por qué no pasa nada
+        if (mode === 'practice') say('¡Espera un momento! Ahora mueve el rival. 👀', 'think');
+        return;
+      }
       if (mode === 'practice') return practiceTap(btn.dataset.sq as Square);
       if (mode === 'watch') return watchNext();
       say('Pulsa 👀 Ver para que te la enseñe, o 🔁 Repetir para hacerla tú.', 'think');
     });
     app.querySelector('#back')!.addEventListener('click', showList);
-    app.querySelector('#edit')?.addEventListener('click', () => showEditor(entry.custom));
+    app.querySelector('#edit')?.addEventListener('click', () => openEditor(entry.custom));
 
     if (start === 'watch') startWatch();
     else if (start === 'practice') startPractice();
@@ -517,6 +535,22 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
   }
 
   // ───────────────────────────── Editor (para el adulto) ─────────────────────────────
+  /** El editor es para el adulto: antes, las 3 cuentas (así el niño no borra sin querer las de clase). */
+  async function openEditor(existing?: CustomOpening) {
+    let overlay = app.querySelector<HTMLElement>('.overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'overlay hidden';
+      app.querySelector('main')!.appendChild(overlay);
+    }
+    const ok = await mathGate(overlay, progress.course, {
+      title: '✏️ Aperturas de clase',
+      text: 'Aquí se añaden, cambian y borran las aperturas de la extraescolar.',
+      okLabel: 'Entrar',
+    });
+    if (ok) showEditor(existing);
+  }
+
   function showEditor(existing?: CustomOpening) {
     screenToken++;
     const chess = new Chess();
@@ -579,6 +613,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
     };
 
     function render(syncText = true) {
+      boardEl.dataset.drag = chess.turn(); // el editor mueve los dos bandos
       drawBoard(boardEl, chess, theme, {
         orientation: color,
         selected,
@@ -722,18 +757,3 @@ function artName(m: Move): string {
   return (m.piece === 'r' || m.piece === 'q' ? 'la ' : 'el ') + PIECE_NAMES[m.piece];
 }
 
-function confetti() {
-  const box = document.createElement('div');
-  box.className = 'confetti';
-  const colors = ['#ff5d73', '#ffcf3f', '#4cc9f0', '#7bd389', '#b28dff'];
-  for (let i = 0; i < 80; i++) {
-    const s = document.createElement('i');
-    s.style.left = `${Math.random() * 100}%`;
-    s.style.background = colors[i % colors.length];
-    s.style.animationDelay = `${Math.random() * 0.8}s`;
-    s.style.animationDuration = `${2 + Math.random() * 1.5}s`;
-    box.appendChild(s);
-  }
-  document.body.appendChild(box);
-  setTimeout(() => box.remove(), 4000);
-}

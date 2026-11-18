@@ -13,6 +13,8 @@ import { sfx } from './sound';
 import { sanEs, showNotation } from './level';
 import { COLLECTIONS, TIERS, type CollectionInfo } from './puzzles/collections';
 import { PUZZLES, type Puzzle } from './puzzles/data';
+import { cap, colorName, confetti, starsHtml } from './ui';
+import { animateMove } from './animate';
 
 export interface SectionContext {
   app: HTMLElement;
@@ -29,10 +31,7 @@ const FILES = 'abcdefgh';
 const VALUE: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
 const fem = (t: PieceSymbol) => t === 'r' || t === 'q';
 const art = (t: PieceSymbol) => (fem(t) ? 'la ' : 'el ') + PIECE_NAMES[t];
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const lo = (t: PieceSymbol) => (fem(t) ? 'la' : 'lo');
-const starsHtml = (n: number) => '<i class="on">★</i>'.repeat(n) + '<i>★</i>'.repeat(3 - n);
-const colorName = (c: Color) => (c === 'w' ? 'blancas' : 'negras');
 const uci = (m: string) => ({ from: m.slice(0, 2) as Square, to: m.slice(2, 4) as Square, promotion: m[4] || undefined });
 const puzzlesOf = (c: CollectionInfo): Puzzle[] => PUZZLES[c.id] ?? [];
 
@@ -46,12 +45,17 @@ export function showPuzzles(ctx: SectionContext) {
 
   // Las colecciones de su curso (y de cursos anteriores) están abiertas. Las de mayores se abren
   // también si consigue una media de 2 estrellas en todos los retos de los grupos anteriores.
-  function tierNeed(min: number): number {
+  /** Estrellas que hacen falta (y conseguidas) en los grupos anteriores para abrir un grupo de mayores. */
+  function tierProgress(min: number): { got: number; need: number } {
     const lower = COLLECTIONS.filter((c) => c.course < min);
-    const max = lower.reduce((a, c) => a + puzzlesOf(c).length * 2, 0);
-    const got = lower.reduce((a, c) => a + starsOf(c), 0);
-    return Math.max(0, max - got);
+    const need = lower.reduce((a, c) => a + puzzlesOf(c).length * 2, 0);
+    const got = Math.min(need, lower.reduce((a, c) => a + starsOf(c), 0));
+    return { got, need };
   }
+  const tierNeed = (min: number) => {
+    const { got, need } = tierProgress(min);
+    return need - got;
+  };
   const isOpen = (c: CollectionInfo) => progress.course >= c.course || tierNeed(c.course) === 0;
 
   /** El reto del día: el mismo durante todo el día, elegido entre los de su curso. */
@@ -85,7 +89,7 @@ export function showPuzzles(ctx: SectionContext) {
         </header>
         <div class="talk">
           <div class="mascot" id="mascot">${mascotSvg('happy')}</div>
-          <p class="bubble" id="bubble">¡Hola, ${PLAYER_NAME}! Elige un tema. Los retos van de fácil a difícil.</p>
+          <p class="bubble" id="bubble" aria-live="polite">¡Hola, ${PLAYER_NAME}! Elige un tema. Los retos van de fácil a difícil.</p>
         </div>
         ${
           dayP
@@ -97,17 +101,28 @@ export function showPuzzles(ctx: SectionContext) {
             : ''
         }
         ${tiers
+          // de los grupos cerrados solo se enseña el siguiente (y plegado): no abrumar con candados
+          .filter((t, i) => i === 0 || COLLECTIONS.filter((c) => c.course === tiers[i - 1].course).every(isOpen))
           .map((t) => {
             const cols = COLLECTIONS.map((c, ci) => ({ c, ci })).filter(({ c }) => c.course === t.course);
             const mine = progress.course >= t.course;
             const opened = cols.every(({ c }) => isOpen(c));
             const title = mine ? (t.course === 1 ? 'Tus retos' : `Retos de ${t.label}`) : `Para mayores · ${t.label} 🎓`;
-            return `<section class="p-tier ${opened ? '' : 'p-tier-locked'}">
+            if (!opened) {
+              // plegado: una barra de progreso en vez de un número grande de estrellas
+              const { got, need } = tierProgress(t.course);
+              return `<section class="p-tier p-tier-locked">
+                <h2>🎓 Retos de mayores</h2>
+                <p class="p-tier-note">${cols.map(({ c }) => c.emoji).join(' ')} ¡Sigue ganando estrellas y se abrirán!</p>
+                <div class="p-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${need}" aria-valuenow="${got}">
+                  <i style="width:${Math.round((got / need) * 100)}%"></i>
+                </div>
+              </section>`;
+            }
+            return `<section class="p-tier">
               <h2>${title}</h2>
               ${
-                !opened
-                  ? `<p class="p-tier-note">🔒 Se abren con <b>${tierNeed(t.course)} ⭐</b> más en los anteriores. ¡Tú puedes!</p>`
-                  : !mine
+                !mine
                     ? `<p class="p-tier-note">🔓 ¡Los has abierto tú con tus estrellas!</p>`
                     : ''
               }
@@ -123,19 +138,7 @@ export function showPuzzles(ctx: SectionContext) {
     });
     app.querySelector('#daily')?.addEventListener('click', () => playPuzzle(day!.ci, day!.pi, true));
     app.querySelectorAll<HTMLElement>('[data-col]').forEach((b) =>
-      b.addEventListener('click', () => {
-        const c = COLLECTIONS[Number(b.dataset.col)];
-        if (isOpen(c)) return showCollection(Number(b.dataset.col));
-        sfx.select();
-        const tier = TIERS.find((t) => t.course === c.course)!;
-        const bubble = app.querySelector<HTMLElement>('#bubble')!;
-        const m = app.querySelector<HTMLElement>('#mascot')!;
-        bubble.textContent = `«${c.title}» es de ${tier.label}. ¡Consigue ${tierNeed(c.course)} ⭐ más en tus retos y se abre! 💪`;
-        m.innerHTML = mascotSvg('think');
-        m.classList.remove('pop');
-        void m.offsetWidth;
-        m.classList.add('pop');
-      }),
+      b.addEventListener('click', () => showCollection(Number(b.dataset.col))), // solo se pintan las abiertas
     );
   }
 
@@ -221,7 +224,7 @@ export function showPuzzles(ctx: SectionContext) {
         <aside class="panel p-panel">
           <div class="talk">
             <div class="mascot" id="mascot"></div>
-            <p class="bubble" id="bubble"></p>
+            <p class="bubble" id="bubble" aria-live="polite"></p>
           </div>
           <div class="p-info" id="info"></div>
           <div class="p-actions">
@@ -265,6 +268,7 @@ export function showPuzzles(ctx: SectionContext) {
       return hintLevel === 1 ? [m.slice(0, 2)] : [m.slice(0, 2), m.slice(2, 4)];
     };
     function render(anim?: { move: Move; ms: number }) {
+      boardEl.dataset.drag = busy ? '' : kid;
       const targets = progress.helps && selected ? chess.moves({ square: selected, verbose: true }) : [];
       const checkSq = chess.inCheck() ? chess.board().flat().find((x) => x?.type === 'k' && x.color === chess.turn())?.square : null;
       const hint = hintSquares();
@@ -294,53 +298,7 @@ export function showPuzzles(ctx: SectionContext) {
       }
       boardEl.innerHTML = html;
       flash = null;
-      if (anim) animateMove(anim.move, anim.ms);
-    }
-
-    /** Desliza una pieza ya dibujada en `to` desde la casilla `from`. */
-    function slide(from: string, to: string, ms: number) {
-      const fromEl = boardEl.querySelector<HTMLElement>(`[data-sq="${from}"]`);
-      const toSq = boardEl.querySelector<HTMLElement>(`[data-sq="${to}"]`);
-      const piece = toSq?.querySelector<HTMLElement>('.piece:not(.ghost)');
-      if (!fromEl || !toSq || !piece) return;
-      const a = fromEl.getBoundingClientRect();
-      const b = toSq.getBoundingClientRect();
-      toSq.classList.add('moving');
-      piece
-        .animate(
-          [
-            { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(1.18)` },
-            { transform: `translate(${(a.left - b.left) * 0.15}px, ${(a.top - b.top) * 0.15}px) scale(1.18)`, offset: 0.85 },
-            { transform: 'translate(0, 0) scale(1)' },
-          ],
-          { duration: ms, easing: 'cubic-bezier(.45, 0, .25, 1)' },
-        )
-        .finished.then(() => toSq.classList.remove('moving'))
-        .catch(() => {});
-    }
-
-    function animateMove(m: Move, ms: number) {
-      if (!ms) return;
-      const to = boardEl.querySelector<HTMLElement>(`[data-sq="${m.to}"]`);
-      if (m.captured && to && !m.isEnPassant()) {
-        const ghost = document.createElement('span');
-        ghost.className = 'piece ghost';
-        ghost.innerHTML = pieceSvg(m.captured, m.color === 'w' ? 'b' : 'w', theme);
-        to.prepend(ghost);
-        ghost
-          .animate(
-            [{ opacity: 1, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(1)', offset: 0.8 }, { opacity: 0, transform: 'scale(.4) rotate(-20deg)' }],
-            { duration: ms, fill: 'forwards' },
-          )
-          .finished.then(() => ghost.remove())
-          .catch(() => {});
-      }
-      slide(m.from, m.to, ms);
-      if (m.isKingsideCastle() || m.isQueensideCastle()) {
-        const r = m.to[1];
-        const king = m.isKingsideCastle();
-        slide(`${king ? 'h' : 'a'}${r}`, `${king ? 'f' : 'd'}${r}`, ms);
-      }
+      if (anim) animateMove(boardEl, anim.move, anim.ms, theme);
     }
 
     function moveSound(m: Move) {
@@ -606,18 +564,3 @@ export function showPuzzles(ctx: SectionContext) {
   showMap();
 }
 
-function confetti() {
-  const box = document.createElement('div');
-  box.className = 'confetti';
-  const colors = ['#ff5d73', '#ffcf3f', '#4cc9f0', '#7bd389', '#b28dff'];
-  for (let i = 0; i < 80; i++) {
-    const s = document.createElement('i');
-    s.style.left = `${Math.random() * 100}%`;
-    s.style.background = colors[i % colors.length];
-    s.style.animationDelay = `${Math.random() * 0.8}s`;
-    s.style.animationDuration = `${2 + Math.random() * 1.5}s`;
-    box.appendChild(s);
-  }
-  document.body.appendChild(box);
-  setTimeout(() => box.remove(), 4000);
-}

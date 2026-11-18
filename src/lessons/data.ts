@@ -24,7 +24,7 @@ export interface ChessExercise {
   text: string;
   fen: string;
   goal: 'check' | 'mate' | 'castle' | 'escape';
-  how?: 'move' | 'capture'; // para 'escape': cómo hay que salir del jaque
+  how?: 'move' | 'capture' | 'block'; // para 'escape': cómo hay que salir del jaque
 }
 
 export type Exercise = FreeExercise | ChessExercise;
@@ -259,11 +259,10 @@ export const LESSONS: Lesson[] = [
     title: 'El jaque',
     emoji: '👑',
     icon: 'k',
-    intro: 'Dar jaque es atacar al rey rival. ¡El rey tiene que salir del jaque enseguida!',
+    intro: 'Dar jaque es atacar al rey rival. Para salir del jaque hay 3 formas: mover el rey, comer la pieza que ataca o tapar el jaque.',
     demo: { mine: ['Re1'], enemies: ['Ke8'], marks: ['e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8'] },
     exercises: [
       { kind: 'chess', text: 'Da jaque al rey negro con la torre.', fen: '4k3/8/8/8/8/8/8/R5K1 w - - 0 1', goal: 'check' },
-      { kind: 'chess', text: 'Ahora da jaque con el alfil.', fen: '4k3/8/8/8/8/8/8/5BK1 w - - 0 1', goal: 'check' },
       { kind: 'chess', text: 'Da jaque con el caballo.', fen: '4k3/8/8/8/4N3/8/8/6K1 w - - 0 1', goal: 'check' },
       {
         kind: 'chess',
@@ -279,6 +278,13 @@ export const LESSONS: Lesson[] = [
         goal: 'escape',
         how: 'capture',
       },
+      {
+        kind: 'chess',
+        text: '¡Jaque! Ahora tápalo: pon una pieza entre la torre y tu rey.',
+        fen: '4r1k1/8/8/8/8/2N5/8/4K3 w - - 0 1',
+        goal: 'escape',
+        how: 'block',
+      },
     ],
   },
   {
@@ -293,6 +299,19 @@ export const LESSONS: Lesson[] = [
       { kind: 'chess', text: 'Tu rey ayuda a la dama. ¡Jaque mate!', fen: '4k3/8/4K3/8/8/8/8/Q7 w - - 0 1', goal: 'mate' },
       { kind: 'chess', text: 'Dos torres juntas son muy fuertes. ¡Jaque mate!', fen: '7k/R7/8/8/8/8/8/1R4K1 w - - 0 1', goal: 'mate' },
       { kind: 'chess', text: 'Busca el jaque mate con la dama.', fen: 'k7/8/1K6/8/8/8/8/7Q w - - 0 1', goal: 'mate' },
+    ],
+  },
+  {
+    id: 'ahogado',
+    title: '¡Ojo, ahogado!',
+    emoji: '😵',
+    icon: 'k',
+    intro: 'Si el rey rival NO está en jaque pero no puede moverse a ningún sitio, es «rey ahogado»: ¡la partida acaba en empate! Mira: el rey negro no tiene adónde ir.',
+    demo: { mine: ['Qb6', 'Kc6'], enemies: ['Ka8'], marks: ['a7', 'b7', 'b8'] },
+    exercises: [
+      { kind: 'chess', text: 'Da jaque mate… ¡pero sin ahogar al rey!', fen: 'k7/8/2K5/8/8/8/8/1Q6 w - - 0 1', goal: 'mate' },
+      { kind: 'chess', text: 'Otra vez: mate, no ahogado.', fen: 'k7/8/1K6/8/8/8/8/2Q5 w - - 0 1', goal: 'mate' },
+      { kind: 'chess', text: 'Hay varios mates. ¡Encuentra uno!', fen: 'k7/2K5/8/8/8/8/8/1Q6 w - - 0 1', goal: 'mate' },
     ],
   },
   {

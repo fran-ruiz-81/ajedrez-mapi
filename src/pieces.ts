@@ -82,8 +82,11 @@ function face(type: PieceSymbol): string {
   return `<g transform="translate(${f.x} ${f.y}) scale(${f.s})">${cheeks}${eyes}${mouth}</g>`;
 }
 
+/** Marca el color en el <svg> (lo usa el arrastre para saber de quién es la pieza). */
+const withColor = (svg: string, color: Color) => svg.replace('<svg ', `<svg data-piece-color="${color}" `);
+
 export function pieceSvg(type: PieceSymbol, color: Color, theme: Theme): string {
-  if (theme.draw) return theme.draw(type, color); // temas con dibujos propios (src/themes/)
+  if (theme.draw) return withColor(theme.draw(type, color), color); // temas con dibujos propios (src/themes/)
   const c = color === 'w' ? theme.white : theme.black;
   const body = `<g fill="${c.fill}" stroke="${c.stroke}" stroke-width="3" stroke-linejoin="round">
       ${SHAPES[type]}${BASE}</g>`;
@@ -93,7 +96,7 @@ export function pieceSvg(type: PieceSymbol, color: Color, theme: Theme): string 
   const gloss = theme.gloss
     ? `<g fill="#fff" opacity="${color === 'w' ? 0.9 : 0.45}" stroke="none">${SHINE[type]}${BASE_SHINE}</g>`
     : '';
-  return `<svg viewBox="0 0 100 100" class="piece-svg" aria-hidden="true">${body}${detail}${gloss}${
+  return `<svg data-piece-color="${color}" viewBox="0 0 100 100" class="piece-svg" aria-hidden="true">${body}${detail}${gloss}${
     theme.faces ? face(type) : ''
   }</svg>`;
 }

@@ -110,7 +110,7 @@
 @media (orientation: landscape) and (max-height: 500px) {
   .l-info { padding: 4px 10px; }
   .l-moves { font-size: .95rem; }
-  .l-actions .btn { padding: 8px; font-size: 1rem; }
+  .l-actions .btn { padding: 8px; font-size: 1rem; min-height: 44px; }
   .l-dots i { width: 11px; height: 11px; }
 }
 @media (max-width: 420px) {

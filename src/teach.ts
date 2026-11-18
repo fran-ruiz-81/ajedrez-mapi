@@ -1,6 +1,13 @@
 // Ayudas para aprender: piezas en peligro y explicaciones sencillas de las jugadas.
 import { Chess, type Color, type Move, type PieceSymbol, type Square } from 'chess.js';
-import { PIECE_VALUES, PIECE_NAMES, withArticle } from './pieces';
+import { PIECE_NAMES, withArticle } from './pieces';
+import { cap } from './ui';
+
+/**
+ * Puntos "de clase" (peón 1, caballo 3, alfil 3, torre 5, dama 9), los mismos de la
+ * lección «Comer piezas». Para enseñar, caballo y alfil valen igual (el motor usa otros).
+ */
+const POINTS: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
 
 const other = (c: Color): Color => (c === 'w' ? 'b' : 'w');
 const feminine = (t: PieceSymbol) => t === 'r' || t === 'q';
@@ -19,8 +26,8 @@ export function isHanging(chess: Chess, sq: Square): boolean {
   if (attackers.length === 0) return false;
   const defenders = chess.attackers(sq, p.color);
   if (defenders.length === 0) return true;
-  const cheapest = Math.min(...attackers.map((a) => PIECE_VALUES[chess.get(a)!.type]));
-  return cheapest < PIECE_VALUES[p.type];
+  const cheapest = Math.min(...attackers.map((a) => POINTS[chess.get(a)!.type]));
+  return cheapest < POINTS[p.type];
 }
 
 /** Casillas con piezas del color dado que están en peligro. */
@@ -54,7 +61,7 @@ export function explainMove(fen: string, uci: { from: string; to: string; promot
     const safe = !isHanging(chess, move.to);
     const recapturable = chess.attackers(move.to, other(me)).length > 0;
     if (!recapturable) return `¡Come ${theirs(move.captured)} gratis! Nadie puede comerte de vuelta.`;
-    if (PIECE_VALUES[move.captured] > PIECE_VALUES[piece])
+    if (POINTS[move.captured] > POINTS[piece])
       return `Cambia ${yours(piece)} por ${theirs(move.captured)}, ¡que vale más!`;
     if (safe) return `Come ${theirs(move.captured)}. Tu ${PIECE_NAMES[piece]} queda protegid${feminine(piece) ? 'a' : 'o'}.`;
     return `Come ${theirs(move.captured)}.`;
@@ -103,13 +110,13 @@ function threatened(chess: Chess, sq: Square, me: Color): PieceSymbol | null {
   }
   for (const m of probe.moves({ square: sq, verbose: true })) {
     if (!m.captured || m.captured === 'k') continue;
-    const wins = PIECE_VALUES[m.captured] > PIECE_VALUES[m.piece] || isHanging(chess, m.to);
-    if (wins && (!best || PIECE_VALUES[m.captured] > PIECE_VALUES[best])) best = m.captured;
+    const wins = POINTS[m.captured] > POINTS[m.piece] || isHanging(chess, m.to);
+    if (wins && (!best || POINTS[m.captured] > POINTS[best])) best = m.captured;
   }
   return best;
 }
 
-/** Aviso después de mover si el niño ha dejado algo en peligro (solo con ayudas). */
+/** Aviso después de mover si el niño ha dejado algo en peligro (null si la jugada está bien). */
 export function warnAfterMove(chess: Chess, move: Move): string | null {
   const me = move.color;
   // ¿Puede el rival dar mate en 1?
@@ -119,14 +126,19 @@ export function warnAfterMove(chess: Chess, move: Move): string | null {
     chess.undo();
     if (mate) return '¡Cuidado! El rival puede darte jaque mate. ¿Quieres deshacer?';
   }
-  if (isHanging(chess, move.to as Square))
+  // comer algo que vale lo mismo o más no es un error, aunque luego te la puedan comer
+  const fairTrade = !!move.captured && POINTS[move.captured] >= POINTS[move.piece];
+  if (!fairTrade && isHanging(chess, move.to as Square)) {
+    if (move.captured)
+      return `Cambias ${yours(move.piece)} por ${theirs(move.captured)}: pierdes puntos. ¿Quieres deshacer?`;
     return `¡Ojo! ${cap(withArticle(move.piece))} que has movido se puede perder. ¿Quieres deshacer?`;
-  const danger = piecesInDanger(chess, me);
+  }
+  const danger = piecesInDanger(chess, me).filter((sq) => !(fairTrade && sq === move.to));
   if (danger.length > 0) {
     const worst = danger
       .map((s) => chess.get(s)!.type)
-      .sort((a, b) => PIECE_VALUES[b] - PIECE_VALUES[a])[0];
-    if (PIECE_VALUES[worst] >= 300) return `¡Ojo! ${cap(yours(worst))} está en peligro (marcad${feminine(worst) ? 'a' : 'o'} en rojo).`;
+      .sort((a, b) => POINTS[b] - POINTS[a])[0];
+    if (POINTS[worst] >= 3) return `¡Ojo! ${cap(yours(worst))} está en peligro (marcad${feminine(worst) ? 'a' : 'o'} en rojo).`;
   }
   return null;
 }
@@ -134,10 +146,8 @@ export function warnAfterMove(chess: Chess, move: Move): string | null {
 /** Frase para contar qué ha hecho el ordenador. */
 export function describeOpponentMove(move: Move): string {
   if (move.isKingsideCastle() || move.isQueensideCastle()) return 'Ha enrocado.';
+  if (move.promotion) return `¡Su peón ha llegado al final y se ha convertido en ${PIECE_NAMES[move.promotion]}!`;
   const what = move.captured ? ` ¡y te ha comido ${yours(move.captured)}!` : '.';
   return `Ha movido ${theirs(move.piece)} a ${move.to}${what}`;
 }
 
-function cap(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}

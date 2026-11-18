@@ -224,6 +224,7 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 
 /* ═════════════════════════ Rivales ═════════════════════════ */
 .rivals { max-width: 760px; display: grid; gap: 16px; }
+.screen.rivals { padding-bottom: 16px; } /* que la lista de rivales quepa sin scroll en el móvil */
 .topbar { display: flex; align-items: center; gap: 12px; min-height: 48px; min-width: 0; }
 .topbar h1 { font-size: clamp(1.25rem, 5vw, 1.8rem); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .color-pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-weight: 700; padding: 12px 14px; }
@@ -373,6 +374,7 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
   border: 4px solid #ff3b3b; box-shadow: inset 0 0 12px #ff3b3b88;
   animation: pulse 1.2s ease-in-out infinite;
 }
+.sq.hint-from::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; box-shadow: 0 0 0 5px #1f9fd0, 0 0 12px 4px #4cc9f0; }
 .sq.hint::before { content: ''; position: absolute; inset: 0; background: #4cc9f0b0; box-shadow: inset 0 0 0 4px #1f9fd0; animation: pulse 1s ease-in-out infinite; }
 .sq.target::after {
   content: ''; position: absolute; width: 30%; height: 30%; border-radius: 50%;
@@ -431,8 +433,9 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
   .bubble { font-size: 1rem; padding: 8px 12px; min-height: 3em; }
   .bubble::before { display: none; }
   .controls { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .ctrl { padding: 8px 2px; font-size: 1.4rem; }
-  .ctrl span { display: none; }
+  .ctrl { padding: 6px 2px; font-size: 1.3rem; min-height: 44px; }
+  .ctrl span { display: block; font-size: .75rem; } /* sin texto, un niño no sabe qué es cada icono */
+  .game .topbar .btn.icon { width: 44px; height: 44px; }
   .captured { padding: 6px 12px; }
   .captured small { font-size: .85rem; }
   .mini { width: 22px; height: 22px; }
@@ -519,7 +522,7 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 /* ═════════════════ Curso y borrar progreso ═════════════════ */
 .chip.course { min-width: 56px; justify-content: center; font-size: 1.15rem; }
 .settings-note { margin: 0; font-size: .95rem; opacity: .8; }
-.reset-btn { justify-self: start; font-size: .95rem; padding: 8px 14px; }
+.reset-btn { justify-self: start; font-size: .95rem; padding: 10px 16px; min-height: 44px; }
 .btn.danger { --bg: #ff5d73; --edge-c: #c93a50; color: #fff; }
 .reset-card { gap: 12px; }
 .sums { display: grid; gap: 10px; width: 100%; max-width: 280px; }
@@ -534,7 +537,7 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 
 /* ═════════════════════════ Medallas ═════════════════════════ */
 .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.medals-btn { font-size: 1rem; padding: 6px 14px; }
+.medals-btn { font-size: 1.05rem; padding: 10px 16px; min-height: 44px; }
 .medals { max-width: 960px; display: grid; gap: 16px; }
 .medal-group { font-size: 1.25rem; margin: 6px 4px 8px; }
 .medal-grid {
@@ -544,14 +547,17 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 .medal {
   background: var(--card); border-radius: var(--radius); padding: 14px 10px;
   display: grid; justify-items: center; text-align: center; gap: 4px;
-  box-shadow: 0 4px 0 #0000000f; opacity: .6; filter: grayscale(.6);
+  box-shadow: 0 4px 0 #0000000f;
 }
+.medal:not(.got) .medal-emoji { filter: grayscale(1); opacity: .4; }
+.medal:not(.got) strong { opacity: .75; }
 .medal.got { opacity: 1; filter: none; box-shadow: 0 4px 0 #f5b30155, 0 0 0 3px #ffd86b inset; }
 .medal-emoji { font-size: 2.6rem; line-height: 1.1; }
 .medal strong { font-size: 1.05rem; }
-.medal small { font-size: .85rem; opacity: .8; }
+.medal small { font-size: .85rem; }
 .medal-toast {
-  position: fixed; left: 50%; top: max(14px, env(safe-area-inset-top)); z-index: 50;
+  position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 50;
+  pointer-events: none; /* no tapa ni bloquea botones */
   transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
   background: #fff; border-radius: 99px; padding: 10px 20px 10px 12px;
   box-shadow: 0 0 0 4px #ffd86b, 0 12px 30px #2b235040;
@@ -561,8 +567,8 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 .medal-toast-emoji { font-size: 2.2rem; }
 .medal-toast small { display: block; font-size: .8rem; opacity: .75; }
 .medal-toast strong { font-size: 1.1rem; }
-@keyframes toast-in { from { transform: translate(-50%, -120%); } }
-@keyframes toast-out { to { transform: translate(-50%, -150%); opacity: 0; } }
+@keyframes toast-in { from { transform: translate(-50%, 140%); } }
+@keyframes toast-out { to { transform: translate(-50%, 160%); opacity: 0; } }
 
 /* ═════════════════════ Arrastrar piezas ═════════════════════ */
 .board { touch-action: none; } /* el dedo arrastra la pieza, no mueve la página */
@@ -573,3 +579,7 @@ h1, h2 { margin: 0; line-height: 1.1; font-weight: 800; }
 .drag-ghost svg { width: 100%; height: 100%; display: block; transform: scale(1.15); }
 .sq.drag-src .piece { opacity: .3; }
 .sq.drag-over { box-shadow: inset 0 0 0 4px #ffffffcc, inset 0 0 0 7px #6a50d8aa; }
+
+/* zonas táctiles cómodas (U6) */
+.toggle { min-height: 44px; }
+.color-pick .chip { min-height: 44px; }

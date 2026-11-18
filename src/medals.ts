@@ -113,7 +113,7 @@ export function showMedals(app: HTMLElement, p: Progress, goHome: () => void) {
             .map((m) => {
               const date = p.medals[m.id];
               return `<li class="medal ${date ? 'got' : ''}">
-                <span class="medal-emoji" aria-hidden="true">${date ? m.emoji : '🔒'}</span>
+                <span class="medal-emoji" aria-hidden="true">${m.emoji}</span>
                 <strong>${m.name}</strong>
                 <small>${m.how}</small>
               </li>`;

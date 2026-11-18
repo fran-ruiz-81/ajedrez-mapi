@@ -67,7 +67,10 @@ export function enableDrag() {
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || !e.isPrimary) return;
     const sq = (e.target as HTMLElement).closest<HTMLElement>('.board [data-sq]');
-    if (!sq?.querySelector('.piece')) return;
+    // cada tablero indica en data-drag el color que el niño puede mover ahora ('' = nada)
+    const allowed = sq?.closest<HTMLElement>('.board')?.dataset.drag;
+    const color = sq?.querySelector('.piece [data-piece-color]')?.getAttribute('data-piece-color');
+    if (!sq || !allowed || color !== allowed) return;
     start = { x: e.clientX, y: e.clientY, sq: sq.dataset.sq!, pointerId: e.pointerId };
   });
   document.addEventListener('pointermove', (e) => {

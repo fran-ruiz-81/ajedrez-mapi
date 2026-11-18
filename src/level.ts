@@ -12,20 +12,13 @@ export interface MathProblem {
 
 const rnd = (min: number, max: number) => min + Math.floor(Math.random() * (max - min + 1));
 
-function addSub(maxTotal: number, noCarry: boolean): MathProblem {
-  for (;;) {
-    const a = rnd(2, maxTotal - 1);
-    const b = rnd(1, maxTotal - a);
-    // sin llevadas: ninguna cifra de las unidades/decenas se pasa de 9 (o se queda corta al restar)
-    const carry = (a % 10) + (b % 10) > 9 || (Math.floor(a / 10) % 10) + (Math.floor(b / 10) % 10) > 9;
-    if (Math.random() < 0.5) {
-      if (noCarry && carry) continue;
-      return { text: `${a} + ${b}`, answer: a + b };
-    }
-    const [x, y] = a >= b ? [a, b] : [b, a];
-    if (noCarry && (x % 10 < y % 10 || Math.floor(x / 10) % 10 < Math.floor(y / 10) % 10)) continue;
-    return { text: `${x} − ${y}`, answer: x - y };
-  }
+/** Suma o resta (sin resultados negativos) con números hasta `maxTotal`. */
+function addSub(maxTotal: number): MathProblem {
+  const a = rnd(2, maxTotal - 1);
+  const b = rnd(1, maxTotal - a);
+  if (Math.random() < 0.5) return { text: `${a} + ${b}`, answer: a + b };
+  const [x, y] = a >= b ? [a, b] : [b, a];
+  return { text: `${x} − ${y}`, answer: x - y };
 }
 
 function times(tables: number[], maxFactor = 10): MathProblem {
@@ -45,13 +38,13 @@ export function mathProblems(course: number): MathProblem[] {
   const one = (): MathProblem => {
     switch (course) {
       case 1:
-        return addSub(20, false);
+        return addSub(20);
       case 2:
-        return addSub(99, true);
+        return addSub(99); // en 2º ya se suma y resta llevando
       case 3:
-        return Math.random() < 0.67 ? addSub(999, false) : times([2, 5, 10]);
+        return Math.random() < 0.67 ? addSub(999) : times([2, 3, 4, 5, 6, 10]);
       case 4:
-        return Math.random() < 0.5 ? addSub(999, false) : times([2, 3, 4, 5, 6, 7, 8, 9]);
+        return Math.random() < 0.5 ? addSub(999) : times([2, 3, 4, 5, 6, 7, 8, 9]);
       default: {
         const r = Math.random();
         if (r < 0.34) return times([2, 3, 4, 5, 6, 7, 8, 9]);
@@ -80,8 +73,8 @@ export function adjustRival(engine: RivalEngine, course: number): RivalEngine {
     };
     return { kind: 'own', level };
   }
-  const extra = course <= 2 ? 0 : course <= 4 ? 2 : 5;
-  return { kind: 'sf', skill: engine.skill + extra, depth: engine.depth + Math.ceil(extra / 2) };
+  const extra = course <= 2 ? 0 : course <= 4 ? 2 : 4;
+  return { kind: 'sf', skill: engine.skill + extra, depth: engine.depth + extra };
 }
 
 /** A partir de 3º se muestra la notación (Cf3, e4…) que usan en la extraescolar. */
@@ -90,8 +83,5 @@ export const showNotation = (course: number) => course >= 3;
 /** En 5º y 6º las ayudas empiezan apagadas (se pueden encender). */
 export const defaultHelps = (course: number) => course <= 4;
 
-/** Notación en español: C caballo, A alfil, T torre, D dama, R rey. */
-export function sanEs(san: string): string {
-  const map: Record<string, string> = { N: 'C', B: 'A', R: 'T', Q: 'D', K: 'R' };
-  return san.replace(/^[NBRQK]/, (m) => map[m]).replace(/=([NBRQ])/, (_, p: string) => '=' + map[p]);
-}
+/** Notación española (C caballo, A alfil, T torre, D dama, R rey, 0-0). */
+export { toEs as sanEs } from './openings/notation';

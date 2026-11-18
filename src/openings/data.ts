@@ -13,6 +13,8 @@ export interface Opening {
   moves: string[];
   /** Cuántas jugadas (de las dos bandas) se practican en 1º y 2º. */
   short: number;
+  /** Curso a partir del que aparece (por defecto, todos). */
+  minCourse?: number;
   /** Explicación de cada jugada (misma posición que `moves`). Las del niño son obligatorias. */
   why: (string | undefined)[];
 }
@@ -134,7 +136,48 @@ export const OPENINGS: Opening[] = [
     ],
   },
 
+  {
+    id: 'pastor',
+    name: 'Mate del Pastor',
+    emoji: '🐑',
+    color: 'w',
+    idea: 'Una trampa rápida: la dama y el alfil atacan f7. ¡Solo funciona si el rival se despista!',
+    moves: ['e4', 'e5', 'Bc4', 'Nc6', 'Qh5', 'Nf6', 'Qxf7#'],
+    short: 7,
+    why: [
+      'El peón del rey al centro.',
+      'El rival también va al centro.',
+      'El alfil apunta a f7, la casilla débil al lado del rey negro.',
+      'El rival saca su caballo.',
+      'La dama sale pronto y también apunta a f7. ¡Dos piezas atacan f7!',
+      '¡El rival se despista! Saca el caballo y ataca a tu dama, pero no defiende f7.',
+      '¡Jaque mate! La dama come en f7 protegida por el alfil. Ojo: si el rival defiende f7, tu dama habrá salido demasiado pronto.',
+    ],
+  },
   // ───────────── Con negras ─────────────
+  {
+    id: 'contra-pastor',
+    name: 'Defensa contra el Pastor',
+    emoji: '🛡️',
+    color: 'b',
+    idea: 'Cuando la dama y el alfil blancos apuntan a f7, tapa el camino de la dama y saca tus piezas. ¡No caigas en la trampa!',
+    moves: ['e4', 'e5', 'Bc4', 'Nc6', 'Qh5', 'g6', 'Qf3', 'Nf6', 'Ne2', 'Bg7', 'd3', 'O-O'],
+    short: 8,
+    why: [
+      'El rival pone su peón en el centro.',
+      'Tú también: peón al centro.',
+      'El alfil blanco apunta a f7, al lado de tu rey.',
+      'Sacas el caballo y defiendes tu peón de e5.',
+      '¡Cuidado! La dama y el alfil atacan f7: amenazan mate.',
+      'El peón tapa el camino de la dama hacia f7 y además la ataca.',
+      'La dama se aparta, pero sigue mirando a f7.',
+      '¡El caballo tapa a la dama! Ahora f7 está a salvo y tu pieza sale a jugar.',
+      'El rival saca su caballo.',
+      'El alfil sale por la casilla que dejó el peón.',
+      'El rival abre camino a su otro alfil.',
+      '¡Enroque! Tu rey a salvo. Ahora la dama blanca salió pronto y tú tienes más piezas fuera.',
+    ],
+  },
   {
     id: 'italiana-negras',
     name: 'Italiana con negras',
@@ -172,7 +215,7 @@ export const OPENINGS: Opening[] = [
       'El caballo blanco ataca tu peón.',
       'Defiende con el caballo.',
       'El alfil blanco mira a f7.',
-      '¡El otro caballo! Ataca el peón de e4.',
+      '¡El otro caballo! Ataca el peón de e4. Ojo: si el caballo blanco salta a g5 y ataca f7, defiéndete con d5.',
       'El rival protege su peón.',
       'El alfil sale para poder enrocarte.',
       'El rival se enroca.',
@@ -186,6 +229,7 @@ export const OPENINGS: Opening[] = [
     name: 'Siciliana Dragón',
     emoji: '🐉',
     color: 'b',
+    minCourse: 3, // muy afilada para 1º-2º: ahí mejor contestar e4 con e5
     idea: 'Contra e4 juegas c5, y tu alfil sale por g7 como un dragón.',
     moves: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'g6', 'Be3', 'Bg7'],
     short: 6,

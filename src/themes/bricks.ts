@@ -151,7 +151,8 @@ const DRAW: Record<PieceSymbol, (p: Pal) => string> = {
 };
 
 export function drawBricks(type: PieceSymbol, color: Color): string {
-  return wrap(DRAW[type](PAL[color]));
+  // un poco más grandes: se veían más pequeñas que en los otros temas
+  return wrap(`<g transform="translate(50 56) scale(1.12) translate(-50 -56)">${DRAW[type](PAL[color])}</g>`);
 }
 
 // ── Tablero: placa base con 2×2 botoncitos por casilla ──
@@ -160,7 +161,8 @@ const studs = (base: string, dark: string, light: string) =>
     .flatMap((y) => [25, 75].map((x) => [x, y]))
     .map(
       ([x, y]) =>
-        `<circle cx="${x + 1.5}" cy="${y + 2.5}" r="13" fill="${dark}"/><circle cx="${x}" cy="${y}" r="13" fill="${base}" stroke="${dark}" stroke-width="1.5"/><circle cx="${x - 5}" cy="${y - 5}" r="3.2" fill="${light}"/>`,
+        // botoncitos suaves (pequeños y poco contrastados) para no recargar el tablero
+        `<g opacity=".55"><circle cx="${x + 1}" cy="${y + 2}" r="10" fill="${dark}"/><circle cx="${x}" cy="${y}" r="10" fill="${base}" stroke="${dark}" stroke-width="1.2"/><circle cx="${x - 4}" cy="${y - 4}" r="2.5" fill="${light}"/></g>`,
     )
     .join('')}</svg>`;
 

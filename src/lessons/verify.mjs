@@ -58,6 +58,7 @@ for (const [li, lesson] of LESSONS.entries()) {
         if (ex.goal === 'escape') {
           if (ex.how === 'capture') return !!m.captured;
           if (ex.how === 'move') return m.piece === 'k';
+          if (ex.how === 'block') return m.piece !== 'k' && !m.captured;
           return true;
         }
         chess.move(m);

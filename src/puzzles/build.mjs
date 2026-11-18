@@ -71,9 +71,10 @@ const firstKidCheck = (r) => {
 
 /** Filtro y rango de rating de cada colección que sale de Lichess. */
 const SOURCES = {
-  mate1: { n: 12, min: 400, max: 1000, maxPieces: 18, f: (r) => has(r, 'mateIn1') },
-  free: { n: 12, min: 400, max: 1000, maxPieces: 22, f: (r) => has(r, 'hangingPiece') && has(r, 'oneMove') },
-  checkwin: { n: 10, min: 500, max: 1150, maxPieces: 22, f: (r) => has(r, 'short') && has(r, 'fork', 'skewer') && !has(r, 'mate') && firstKidCheck(r) },
+  // 1º-2º: posiciones limpias (pocas piezas) y rating bajo
+  mate1: { n: 12, min: 400, max: 850, maxPieces: 14, f: (r) => has(r, 'mateIn1') },
+  free: { n: 12, min: 400, max: 850, maxPieces: 16, f: (r) => has(r, 'hangingPiece') && has(r, 'oneMove') },
+  checkwin: { n: 10, min: 500, max: 950, maxPieces: 16, f: (r) => has(r, 'short') && has(r, 'fork', 'skewer') && !has(r, 'mate') && firstKidCheck(r) },
   mate2: { n: 10, min: 700, max: 1300, maxPieces: 24, f: (r) => has(r, 'mateIn2') },
   fork: { n: 10, min: 600, max: 1200, maxPieces: 24, f: (r) => has(r, 'fork') && has(r, 'short') && !has(r, 'mate') && !firstKidCheck(r) },
   pin: { n: 10, min: 700, max: 1300, maxPieces: 26, f: (r) => has(r, 'pin') && has(r, 'short') && !has(r, 'mate') },
@@ -83,6 +84,7 @@ const SOURCES = {
   },
   mate3: { n: 10, min: 900, max: 1600, maxPieces: 28, f: (r) => has(r, 'mateIn3') },
   combo: { n: 10, min: 1000, max: 1600, maxPieces: 28, f: (r) => has(r, 'long') && !has(r, 'mate') },
+  pasillo: { n: 10, min: 400, max: 1200, maxPieces: 24, f: (r) => has(r, 'backRankMate') && has(r, 'mateIn1') },
 };
 
 const sf = await openEngine();
@@ -164,7 +166,9 @@ async function buildSave(col, n) {
     if (!cand.length) continue;
     place(attType, 'b', pick(cand));
     for (let i = 0, k = 2 + Math.floor(rand() * 3); i < k; i++) place(pick(['p', 'p', 'n', 'b', 'r']), 'b', randSq());
-    for (let i = 0, k = Math.floor(rand() * 3); i < k; i++) place('p', 'w', randSq());
+    // peones blancos lejos de coronar: si no, coronar sería la jugada natural y no se trata de eso
+    const lowSq = () => pick([...free].filter((s) => +s[1] <= 5));
+    for (let i = 0, k = Math.floor(rand() * 3); i < k; i++) place('p', 'w', lowSq());
     const fen = c.fen();
     let pos;
     try {

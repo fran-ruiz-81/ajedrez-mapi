@@ -1,6 +1,6 @@
 import './style.css';
 import { Chess, type Color, type Move, type PieceSymbol, type Square } from 'chess.js';
-import { pieceSvg, PIECE_NAMES } from './pieces';
+import { pieceSvg, PIECE_NAMES, withArticle } from './pieces';
 import { THEMES, getTheme, type Theme } from './themes';
 import { load, save, type Progress } from './storage';
 import { sfx, setSoundEnabled } from './sound';
@@ -13,9 +13,12 @@ import qrcode from 'qrcode-generator';
 import { showLessons } from './lessons';
 import { showPuzzles } from './puzzles';
 import { showOpenings } from './openings';
+import { animateMove } from './animate';
 import { enableDrag, justDropped } from './drag';
 import { celebrate, checkMedals, MEDALS, recordEvent, showMedals } from './medals';
-import { adjustRival, COURSES, defaultHelps, mathProblems, sanEs, showNotation } from './level';
+import { adjustRival, COURSES, defaultHelps, sanEs, showNotation } from './level';
+import { mathGate } from './mathgate';
+import { cap, colorName, confetti, esc } from './ui';
 
 const app = document.getElementById('app')!;
 const progress: Progress = load();
@@ -38,7 +41,6 @@ const persist = () => {
   save(progress);
   if (fresh.length) celebrate(fresh);
 };
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 // ───────────────────────── Motor propio en un Worker ─────────────────────────
 
@@ -169,60 +171,26 @@ function showHome() {
 }
 
 /** Borrar estrellas: hay que resolver 3 cuentas de su curso, para que no pase sin querer. */
-function askReset() {
+async function askReset() {
   const overlay = app.querySelector<HTMLElement>('#overlay')!;
-  const problems = mathProblems(progress.course);
-  overlay.innerHTML = `
-    <form class="card reset-card" id="reset-form" novalidate>
-      <div class="mascot">${mascotSvg('think')}</div>
-      <h2>🧹 ¿Borrar las estrellas?</h2>
-      <p>Se borrarán las estrellas y las medallas (tus aperturas guardadas se quedan). Para hacerlo, resuelve estas 3 cuentas:</p>
-      <div class="sums">
-        ${problems
-          .map(
-            (p, i) => `<label class="sum"><span>${p.text} =</span>
-              <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" data-i="${i}" aria-label="Resultado de ${p.text}"/></label>`,
-          )
-          .join('')}
-      </div>
-      <p class="reset-msg" id="reset-msg" aria-live="polite"></p>
-      <div class="row">
-        <button type="button" class="btn" id="reset-cancel">Mejor no</button>
-        <button type="submit" class="btn danger">Borrar</button>
-      </div>
-    </form>`;
-  overlay.classList.remove('hidden');
-  const close = () => overlay.classList.add('hidden');
-  overlay.querySelector('#reset-cancel')!.addEventListener('click', close);
-  overlay.querySelector<HTMLInputElement>('input')!.focus();
-  overlay.querySelector('#reset-form')!.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const inputs = [...overlay.querySelectorAll<HTMLInputElement>('input')];
-    let ok = true;
-    inputs.forEach((inp, i) => {
-      const right = inp.value.trim() !== '' && Number(inp.value) === problems[i].answer;
-      inp.classList.toggle('wrong', !right);
-      ok &&= right;
-    });
-    const msg = overlay.querySelector<HTMLElement>('#reset-msg')!;
-    if (!ok) {
-      sfx.error();
-      msg.textContent = 'Alguna cuenta no está bien. ¡Revisa las marcadas en rojo!';
-      return;
-    }
-    progress.stars = {};
-    progress.lessons = {};
-    progress.puzzles = {};
-    progress.openings = {};
-    progress.medals = {};
-    progress.events = {};
-    persist();
-    sfx.hint();
-    overlay.innerHTML = `<div class="card"><div class="mascot big">${mascotSvg('happy')}</div>
-      <h2>¡Cuentas perfectas! ✨</h2><p>Progreso borrado. ¡A conseguir estrellas otra vez!</p>
-      <div class="row"><button class="btn primary" id="reset-ok">¡Vamos!</button></div></div>`;
-    overlay.querySelector('#reset-ok')!.addEventListener('click', showHome);
+  const ok = await mathGate(overlay, progress.course, {
+    title: '🧹 ¿Borrar las estrellas?',
+    text: 'Se borrarán las estrellas y las medallas (tus aperturas guardadas se quedan).',
+    okLabel: 'Borrar',
+    danger: true,
   });
+  if (!ok) return;
+  progress.stars = {};
+  progress.lessons = {};
+  progress.puzzles = {};
+  progress.openings = {};
+  progress.medals = {};
+  progress.events = {};
+  persist();
+  overlay.innerHTML = `<div class="card"><div class="mascot big">${mascotSvg('happy')}</div>
+    <h2>¡Cuentas perfectas! ✨</h2><p>Progreso borrado. ¡A conseguir estrellas otra vez!</p>
+    <div class="row"><button class="btn primary" id="reset-ok">¡Vamos!</button></div></div>`;
+  overlay.querySelector('#reset-ok')!.addEventListener('click', showHome);
 }
 
 const PUBLIC_URL = 'https://fran-ruiz-81.github.io/ajedrez-mapi/';
@@ -340,7 +308,6 @@ export function startGame(opts: GameOpts) {
   const isCpu = opts.mode === 'cpu';
   const rival = opts.rival;
   const myTurn = () => !isCpu || chess.turn() === playerColor;
-  const colorName = (c: Color) => (c === 'w' ? 'blancas' : 'negras');
 
   app.innerHTML = `
     <main class="screen game">
@@ -353,7 +320,7 @@ export function startGame(opts: GameOpts) {
       <aside class="panel">
         <div class="talk">
           <div class="mascot" id="mascot"></div>
-          <p class="bubble" id="bubble"></p>
+          <p class="bubble" id="bubble" aria-live="polite"></p>
         </div>
         <button class="btn replay hidden" id="replay">👀 Ver otra vez su jugada</button>
         <div class="controls">
@@ -391,55 +358,6 @@ export function startGame(opts: GameOpts) {
   const PLAYER_MS = reduceMotion ? 0 : 220;
   const replayBtn = () => app.querySelector<HTMLElement>('#replay')!;
 
-  /** Desliza una pieza ya dibujada en `to` desde la casilla `from`. */
-  function slide(from: string, to: string, ms: number) {
-    const fromEl = boardEl.querySelector<HTMLElement>(`[data-sq="${from}"]`);
-    const toSq = boardEl.querySelector<HTMLElement>(`[data-sq="${to}"]`);
-    const piece = toSq?.querySelector<HTMLElement>('.piece:not(.ghost)');
-    if (!fromEl || !toSq || !piece) return;
-    const a = fromEl.getBoundingClientRect();
-    const b = toSq.getBoundingClientRect();
-    toSq.classList.add('moving');
-    piece
-      .animate(
-        [
-          { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(1.18)` },
-          { transform: `translate(${(a.left - b.left) * 0.15}px, ${(a.top - b.top) * 0.15}px) scale(1.18)`, offset: 0.85 },
-          { transform: 'translate(0, 0) scale(1)' },
-        ],
-        { duration: ms, easing: 'cubic-bezier(.45, 0, .25, 1)' },
-      )
-      .finished.then(() => toSq.classList.remove('moving'))
-      .catch(() => {});
-  }
-
-  /** Anima la jugada `m` (que ya está hecha en el tablero). */
-  function animateMove(m: Move, ms: number) {
-    if (!ms) return;
-    const to = boardEl.querySelector<HTMLElement>(`[data-sq="${m.to}"]`);
-    to?.classList.remove('arrived');
-    // la pieza comida se queda visible y se desvanece cuando llega la otra
-    if (m.captured && to && !m.isEnPassant()) {
-      const ghost = document.createElement('span');
-      ghost.className = 'piece ghost';
-      ghost.innerHTML = pieceSvg(m.captured, m.color === 'w' ? 'b' : 'w', theme);
-      to.prepend(ghost);
-      ghost
-        .animate(
-          [{ opacity: 1, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(1)', offset: 0.8 }, { opacity: 0, transform: 'scale(.4) rotate(-20deg)' }],
-          { duration: ms, fill: 'forwards' },
-        )
-        .finished.then(() => ghost.remove())
-        .catch(() => {});
-    }
-    slide(m.from, m.to, ms);
-    if (m.isKingsideCastle() || m.isQueensideCastle()) {
-      const r = m.to[1];
-      const king = m.isKingsideCastle();
-      slide(`${king ? 'h' : 'a'}${r}`, `${king ? 'f' : 'd'}${r}`, ms);
-    }
-  }
-
   function render(anim?: { move: Move; ms: number }) {
     const last = chess.history({ verbose: true }).at(-1);
     const targets = selected ? legalTargets(selected) : [];
@@ -465,7 +383,8 @@ export function startGame(opts: GameOpts) {
           last && (sq === last.from || sq === last.to) && 'last',
           sq === checkSq && 'check',
           danger.has(sq) && 'danger',
-          hint && (sq === hint.from || sq === hint.to) && 'hint',
+          hint && sq === hint.from && 'hint-from', // la pieza que hay que mover
+          hint && sq === hint.to && 'hint', // adónde
           t && progress.helps && (t.captured ? 'target-capture' : 'target'),
           last && sq === last.to && 'arrived',
         ]
@@ -480,7 +399,8 @@ export function startGame(opts: GameOpts) {
       }
     }
     boardEl.innerHTML = html;
-    if (anim) animateMove(anim.move, anim.ms);
+    boardEl.dataset.drag = !over && !thinking && myTurn() ? chess.turn() : '';
+    if (anim) animateMove(boardEl, anim.move, anim.ms, theme);
 
     // turno
     if (over) turnEl.textContent = '';
@@ -569,7 +489,7 @@ export function startGame(opts: GameOpts) {
         <div class="row">
           <button class="btn primary" id="again">🔁 Otra vez</button>
           <button class="btn" id="see">👀 Ver tablero</button>
-          <button class="btn" id="menu">🏠 Menú</button>
+          <button class="btn" id="menu">${opts.onExit ? '⬅️ Volver' : isCpu ? '🐾 Rivales' : '🏠 Inicio'}</button>
         </div>
       </div>`;
     overlay.classList.remove('hidden');
@@ -590,12 +510,16 @@ export function startGame(opts: GameOpts) {
     }
     render({ move, ms: justDropped() ? 0 : PLAYER_MS }); // si la ha arrastrado, ya está en su sitio
     soundFor(move);
+    const token = gameToken;
     await wait(PLAYER_MS);
+    if (token !== gameToken) return; // ha deshecho o salido durante la animación
     if (checkEnd()) return;
 
-    const warning = progress.helps ? warnAfterMove(chess, move) : null;
-    if (warning) say(warning, 'wow');
+    // Se calcula siempre: con ayudas se avisa; sin ayudas no se avisa, pero tampoco se felicita un error
+    const warning = warnAfterMove(chess, move);
+    if (warning && progress.helps) say(warning, 'wow');
     else if (chess.inCheck()) say('¡Jaque! Has atacado al rey. 👑', 'wow');
+    else if (warning) say(isCpu ? `Ahora piensa ${rival!.name}…` : `Ahora mueven las ${colorName(chess.turn())}.`, 'think');
     else say(praise(), 'happy');
 
     if (isCpu) await cpuTurn();
@@ -608,7 +532,15 @@ export function startGame(opts: GameOpts) {
     const fen = chess.fen();
     const [m] = await Promise.all([computerMove(fen, rival!), wait(700)]);
     if (token !== gameToken || over) return;
-    const move = chess.move({ from: m.from, to: m.to, promotion: m.promotion ?? 'q' });
+    let move: Move;
+    try {
+      move = chess.move({ from: m.from, to: m.to, promotion: m.promotion ?? 'q' });
+    } catch {
+      // respuesta rara del motor: que juegue el motor propio para no quedarse atascados
+      const own = await askOwn({ kind: 'pick', fen, level: { depth: 1, noise: 0, blunder: 0, qDepth: 1 } });
+      if (token !== gameToken || over) return;
+      move = chess.move({ from: own.from, to: own.to, promotion: own.promotion ?? 'q' });
+    }
     render({ move, ms: CPU_MS });
     await wait(CPU_MS); // el sonido suena cuando la pieza llega
     if (token !== gameToken) return;
@@ -680,7 +612,7 @@ export function startGame(opts: GameOpts) {
       say(
         chess.inCheck()
           ? '¡Tu rey está en jaque! Primero tienes que salvarlo.'
-          : `${cap(PIECE_NAMES[piece.type])} no puede ir a ${sq}. ${progress.helps ? 'Mira los puntitos.' : ''}`,
+          : `${cap(withArticle(piece.type))} no puede ir a ${sq}. ${progress.helps ? 'Mira los puntitos.' : ''}`,
         'think',
       );
       selected = null;
@@ -731,6 +663,8 @@ export function startGame(opts: GameOpts) {
     hint = null;
     say('Hemos vuelto atrás. ¡Piensa otra jugada!', 'happy');
     render();
+    // si al deshacer le toca al ordenador (p. ej. abrió él la partida), que vuelva a jugar
+    if (isCpu && chess.turn() !== playerColor && !chess.isGameOver()) void cpuTurn();
   });
   app.querySelector('#hint')!.addEventListener('click', async () => {
     if (!myTurn() || over || thinking) return;
@@ -744,7 +678,11 @@ export function startGame(opts: GameOpts) {
     hint = { from: m.from, to: m.to };
     selected = null;
     sfx.hint();
-    say(`💡 ${explainMove(fen, m)}${notation(sanOf(fen, m))}`, 'happy');
+    const why = explainMove(fen, m);
+    const piece = new Chess(fen).get(m.from as Square);
+    // si la explicación no dice adónde, se lo decimos: "El peón de d2 a d4."
+    const where = piece && !why.includes(m.to) ? `${cap(withArticle(piece.type))} de ${m.from} a ${m.to}. ` : '';
+    say(`💡 ${where}${why}${notation(sanOf(fen, m))}`, 'happy');
     render();
   });
 
@@ -780,31 +718,24 @@ function sanOf(fen: string, m: { from: string; to: string; promotion?: string })
   }
 }
 
-function cap(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
 
-function confetti() {
-  const box = document.createElement('div');
-  box.className = 'confetti';
-  const colors = ['#ff5d73', '#ffcf3f', '#4cc9f0', '#7bd389', '#b28dff'];
-  for (let i = 0; i < 80; i++) {
-    const s = document.createElement('i');
-    s.style.left = `${Math.random() * 100}%`;
-    s.style.background = colors[i % colors.length];
-    s.style.animationDelay = `${Math.random() * 0.8}s`;
-    s.style.animationDuration = `${2 + Math.random() * 1.5}s`;
-    box.appendChild(s);
-  }
-  document.body.appendChild(box);
-  setTimeout(() => box.remove(), 4000);
-}
 
 // Evitar zoom accidental con pellizco en Safari (ignora user-scalable=no).
 // El zoom por doble toque lo evita `touch-action: manipulation` en el CSS.
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 enableDrag();
+
+// Accesibilidad: al abrirse cualquier ventana (fin de partida, coronación, ejercicio
+// superado…) el foco pasa a ella, para no quedarse en el tablero de detrás.
+new MutationObserver((changes) => {
+  for (const c of changes) {
+    const el = c.target as HTMLElement;
+    if (el.classList.contains('overlay') && !el.classList.contains('hidden'))
+      el.querySelector<HTMLElement>('input, .btn.primary, .btn')?.focus({ preventScroll: true });
+  }
+}).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
 showHome();
 
 // Instalable y sin conexión (PWA)
