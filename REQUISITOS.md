@@ -27,7 +27,8 @@ _Última actualización: 17/11/2026_
 | Se juega en portátil y en móvil | ✅ | |
 | La pantalla se ve bien en monitor, tablet y móvil (vertical y horizontal) | ✅ | Probado en 390×844, 844×390, 768×1024 y 1440×900, sin scroll |
 | Instalable en el móvil como app (PWA) | ✅ | "Añadir a pantalla de inicio" |
-| Funciona sin conexión | ✅ | Tras la primera visita |
+| Funciona sin conexión | ✅ | Desde la primera visita (el service worker guarda la app al instalarse); Stockfish, cuando ya se ha usado una vez |
+| Rápido en el móvil con mala conexión | ✅ | Stockfish se precarga en segundo plano y nunca hace esperar más de 2,5 s; fuente servida desde la web; QR solo en ordenador |
 | Publicación automática con cada cambio | ✅ | GitHub Actions → https://fran-ruiz-81.github.io/ajedrez-mapi/ |
 | Repositorio público en GitHub Pages | ✅ | Decisión del usuario; licencia GPL-3.0 por Stockfish |
 | Sin zoom accidental en el móvil | ✅ | Corregido tras probarlo jugando |
@@ -39,7 +40,7 @@ _Última actualización: 17/11/2026_
 |---|---|---|
 | Contra el ordenador | ✅ | |
 | Dos personas en el mismo dispositivo | ✅ | |
-| Lecciones guiadas (pieza a pieza, minijuegos) | ✅ | 10 lecciones; ver sección 6 bis |
+| Lecciones guiadas (pieza a pieza, minijuegos) | ✅ | 11 lecciones; ver sección 6 bis |
 | Retos / puzzles (mate en 1, pieza sin defender…) | ✅ | Ver sección 6 ter |
 | Aperturas | ✅ | Ver sección 6 |
 
@@ -77,7 +78,7 @@ _Última actualización: 17/11/2026_
 
 | Requisito | Estado | Notas |
 |---|---|---|
-| Lecciones: torre, alfil, dama, rey, caballo, peón, comer piezas (valores), jaque, jaque mate, enroque | ✅ | `src/lessons/data.ts` |
+| Lecciones: torre, alfil, dama, rey, caballo, peón, comer piezas (valores), jaque (mover, comer y tapar), jaque mate, ¡ojo, ahogado!, enroque | ✅ | `src/lessons/data.ts` |
 | Introducción de Nino con demostración de cómo mueve la pieza | ✅ | |
 | Ejercicios "recoge las estrellas", con piezas rivales y casillas atacadas | ✅ | 3–5 por lección |
 | Ejercicios de jaque, mate en 1, enroque, coronar y mejor captura | ✅ | |
@@ -90,7 +91,7 @@ _Última actualización: 17/11/2026_
 
 | Requisito | Estado | Notas |
 |---|---|---|
-| Colecciones por tema, de fácil a difícil | ✅ | 104 retos en 10 colecciones: Mate en 1, ¡Pieza gratis!, ¡Sálvala!, Jaque que gana, Mate en 2, Horquillas, Clavadas, Gana en 2, Mate en 3, Combinaciones |
+| Colecciones por tema, de fácil a difícil | ✅ | 114 retos en 11 colecciones: Mate en 1, ¡Pieza gratis!, ¡Sálvala!, Jaque que gana, Mate del pasillo, Mate en 2, Horquillas, Clavadas, Gana en 2, Mate en 3, Combinaciones |
 | Adaptado al curso | ✅ | 1º–2º: 4 colecciones (44 retos); 3º–4º: 8 (84); 5º–6º: todas. Las de mayores se abren antes con buena media de estrellas |
 | Cada reto verificado con Stockfish (solución única) | ✅ | `node src/puzzles/verify.mjs` (~2 min) |
 | Pista en dos pasos (pieza, luego casilla) y explicación concreta al fallar | ✅ | |
@@ -102,7 +103,7 @@ _Última actualización: 17/11/2026_
 
 | Requisito | Estado | Notas |
 |---|---|---|
-| Aperturas predefinidas para principiantes con explicación | ✅ | 10 (5 con blancas, 5 con negras): Italiana, Cuatro Caballos, Española, Escocesa, Londres, Italiana con negras, Dos Caballos, Siciliana Dragón, Caro-Kann, Gambito de Dama rehusado. `src/openings/data.ts` |
+| Aperturas predefinidas para principiantes con explicación | ✅ | 12 (6 con blancas, 6 con negras): Italiana, Cuatro Caballos, Española, Escocesa, Londres, Mate del Pastor, Defensa contra el Pastor, Italiana con negras, Dos Caballos, Siciliana Dragón (desde 3º), Caro-Kann, Gambito de Dama rehusado. `src/openings/data.ts` |
 | Longitud según el curso | ✅ | 1º–2º: 6–8 jugadas; desde 3º: 11–12, con notación española |
 | Ver la apertura paso a paso con explicación de cada jugada | ✅ | Con flechas que enseñan |
 | Que el padre añada las aperturas de clase | ✅ | Moviendo piezas o pegando la notación (inglesa o española, con o sin números). Se pueden editar y borrar |
@@ -174,5 +175,6 @@ El orden de las fases 2–4 se puede cambiar según lo que estén dando en la ex
 
 - **17/11/2026** — Fase 1 publicada. Mascota renombrada a Nino y juego personalizado para LRM. Corregido el zoom accidental en el móvil.
 - **17/11/2026** — QR en la pantalla principal para abrir el juego en el móvil e instrucciones para instalarlo como app.
+- **18/11/2026** — Revisión de código completa (velocidad, nivel por curso, UX infantil, código limpio): 8 bugs corregidos (2 dejaban la partida bloqueada), pistas con los puntos de clase, rivales escalonados, lecciones de tapar el jaque y de rey ahogado, retos de 1º–2º más fáciles, app sin conexión desde la primera visita, Stockfish sin esperas, botones de 44 px, editor de aperturas protegido. Añadidos Mate del Pastor, Defensa contra el Pastor y colección Mate del pasillo.
 - **18/11/2026** — Fases 3 (retos), 4 (aperturas) y 5 (4 temas nuevos y medallas) publicadas. Icono nuevo. Arrastrar piezas. Quitada la flecha de la jugada del ordenador. Corregido el color de las casillas (a1 debe ser oscura).
 - **17/11/2026** — Fase 2 (lecciones) publicada. Rediseño visual. Animación de la jugada del ordenador. Curso escolar y borrar progreso con cuentas.

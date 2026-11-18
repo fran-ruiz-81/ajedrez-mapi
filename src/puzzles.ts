@@ -6,7 +6,7 @@ import { Chess, type Color, type Move, type PieceSymbol, type Square } from 'che
 import type { Progress } from './storage';
 import type { Theme } from './themes';
 import type { Rival } from './rivals';
-import type { GameOpts } from './main';
+import type { GameOpts } from './game';
 import { pieceSvg, PIECE_NAMES } from './pieces';
 import { mascotSvg, MASCOT_NAME, PLAYER_NAME, type Mood } from './mascot';
 import { sfx } from './sound';
@@ -126,7 +126,7 @@ export function showPuzzles(ctx: SectionContext) {
                     ? `<p class="p-tier-note">🔓 ¡Los has abierto tú con tus estrellas!</p>`
                     : ''
               }
-              <ul class="p-cols">${cols.map(({ c, ci }) => colCard(c, ci, opened)).join('')}</ul>
+              <ul class="p-cols">${cols.map(({ c, ci }) => colCard(c, ci)).join('')}</ul>
             </section>`;
           })
           .join('')}
@@ -142,14 +142,13 @@ export function showPuzzles(ctx: SectionContext) {
     );
   }
 
-  function colCard(c: CollectionInfo, ci: number, opened: boolean): string {
+  function colCard(c: CollectionInfo, ci: number): string {
     const list = puzzlesOf(c);
     const s = starsOf(c);
     const done = list.filter((p) => progress.puzzles[p.id]).length;
     const pct = list.length ? Math.round((done / list.length) * 100) : 0;
-    return `<li><button class="p-col ${opened ? '' : 'locked'}" data-col="${ci}"
-        aria-label="${c.title}: ${opened ? `${done} de ${list.length} retos, ${s} estrellas` : 'cerrada, para mayores'}">
-      <span class="p-col-icon">${opened ? c.emoji : '🔒'}</span>
+    return `<li><button class="p-col" data-col="${ci}" aria-label="${c.title}: ${done} de ${list.length} retos, ${s} estrellas">
+      <span class="p-col-icon">${c.emoji}</span>
       <span class="p-col-text">
         <strong>${c.title}</strong>
         <small>${c.blurb}</small>

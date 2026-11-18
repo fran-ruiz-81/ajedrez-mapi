@@ -40,8 +40,6 @@
 .p-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #7bd389); border-radius: 99px; }
 .p-col-stars { font-weight: 800; font-size: 1.15rem; white-space: nowrap; }
 .p-col-stars small { font-size: .85rem; color: var(--ink-soft); }
-.p-col.locked { background: #f7f6fb; color: var(--ink-soft); box-shadow: 0 4px 0 #e4e1ee; }
-.p-col.locked .p-col-icon { background: #ecebf1; font-size: 1.6rem; }
 .p-tier-locked h2 { color: var(--ink-soft); }
 .p-credit { margin: 4px 0 0; font-size: .85rem; color: var(--ink-soft); text-align: center; }
 

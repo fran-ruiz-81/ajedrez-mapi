@@ -49,3 +49,7 @@ export const RIVALS: Rival[] = [
     engine: { kind: 'sf', skill: 2, depth: 6 },
   },
 ];
+
+/** El primer rival está abierto; los demás, al ganar al anterior. */
+export const isRivalUnlocked = (stars: Record<string, number>, i: number) =>
+  i === 0 || (stars[RIVALS[i - 1].id] ?? 0) > 0;

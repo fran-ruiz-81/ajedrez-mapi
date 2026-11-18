@@ -72,10 +72,7 @@ function orderMoves(moves: Move[]): Move[] {
   return moves.sort((a, b) => key(b) - key(a));
 }
 
-let nodes = 0;
-
 function quiesce(chess: Chess, alpha: number, beta: number, depth: number): number {
-  nodes++;
   const stand = evaluate(chess);
   if (depth === 0 || stand >= beta) return stand;
   if (stand > alpha) alpha = stand;
@@ -93,7 +90,6 @@ function quiesce(chess: Chess, alpha: number, beta: number, depth: number): numb
 // Nota: no se comprueba la repetición de jugadas (es muy costosa en chess.js);
 // para los rivales fáciles no importa.
 function negamax(chess: Chess, depth: number, alpha: number, beta: number, ply: number, qDepth: number): number {
-  nodes++;
   const moves = chess.moves({ verbose: true });
   if (moves.length === 0) return chess.inCheck() ? -MATE + ply : 0;
   if (depth === 0) return quiesce(chess, alpha, beta, qDepth);
@@ -120,7 +116,6 @@ export interface ScoredMove {
 /** Puntúa todas las jugadas legales con una búsqueda a la profundidad dada. */
 export function scoreMoves(fen: string, depth: number, qDepth = 2): ScoredMove[] {
   const chess = new Chess(fen);
-  nodes = 0;
   const out: ScoredMove[] = [];
   for (const m of orderMoves(chess.moves({ verbose: true }))) {
     chess.move(m);
@@ -161,8 +156,5 @@ export function pickMove(fen: string, level: Level): ScoredMove {
   return best;
 }
 
-export function lastNodeCount() {
-  return nodes;
-}
 
 export const MATE_SCORE = MATE;

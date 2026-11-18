@@ -48,7 +48,12 @@ El despliegue es automático: un push a `main` ejecuta `.github/workflows/deploy
 
 | Archivo | Qué hace |
 |---|---|
-| `src/main.ts` | Pantallas (inicio, rivales, partida), interacción con el tablero, final de partida |
+| `src/main.ts` | Solo el arranque: tema, navegación, arrastre, accesibilidad, precarga de Stockfish y PWA |
+| `src/app.ts` | Estado compartido: `app`, `progress`, `persist()`, tema actual y `nav` (navegación sin imports circulares) |
+| `src/home.ts` | Pantalla de inicio: menú, QR/instalar, tema, sonido, curso y borrar progreso |
+| `src/rivals-screen.ts` | Pantalla «Elige tu rival» |
+| `src/game.ts` | La partida (contra el ordenador o dos personas), también desde una posición (`fen`) |
+| `src/engines.ts` | Motor propio en un Worker y Stockfish con reserva (`computerMove`, `hintMove`) |
 | `src/teach.ts` | Parte educativa: piezas en peligro, explicación de pistas, avisos tras mover |
 | `src/engine.ts` / `engine.worker.ts` | Motor propio y su Worker |
 | `src/stockfish.ts` | Puente UCI con Stockfish; si falla, devuelve `null` y se usa el motor propio |

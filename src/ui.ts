@@ -28,3 +28,6 @@ export function confetti() {
   document.body.appendChild(box);
   setTimeout(() => box.remove(), 4000);
 }
+
+/** Espera `ms` milisegundos. */
+export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));

@@ -1,13 +1,14 @@
 // Fase 4: Aperturas ("saques" de la extraescolar).
 // Lista de aperturas, pantalla de práctica (ver, repetir y jugar desde la posición)
 // y editor de las aperturas que añade el padre. Contenido en `openings/data.ts`.
+import { isRivalUnlocked } from './rivals';
 import { mathGate } from './mathgate';
 import './openings.css';
 import { Chess, type Move, type Square } from 'chess.js';
 import type { CustomOpening, Progress } from './storage';
 import type { Theme } from './themes';
 import type { Rival } from './rivals';
-import type { GameOpts } from './main';
+import type { GameOpts } from './game';
 import { pieceSvg, PIECE_NAMES } from './pieces';
 import { mascotSvg, MASCOT_NAME, PLAYER_NAME, type Mood } from './mascot';
 import { sfx } from './sound';
@@ -470,7 +471,7 @@ export function showOpenings(ctx: SectionContext, openId?: string) {
         return;
       }
       const rivals = ctx.rivals;
-      const open = (i: number) => i === 0 || (progress.stars[rivals[i - 1].id] ?? 0) > 0;
+      const open = (i: number) => isRivalUnlocked(progress.stars, i);
       overlay.innerHTML = `
         <div class="card o-rivals">
           <h2>🤖 ¿Contra quién juegas?</h2>

@@ -23,10 +23,6 @@ export function formatLine(moves: string[], es = true): string {
     .join(' ');
 }
 
-/** Número de jugada y bando de la jugada `i` (0 = primera de las blancas). */
-export function moveLabel(i: number): string {
-  return `${Math.floor(i / 2) + 1}${i % 2 === 0 ? '. (blancas)' : '… (negras)'}`;
-}
 
 export type ParseResult =
   | { ok: true; moves: string[] }
